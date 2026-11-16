@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel Admin | SAPA NAMBASO Samsat Palu</title>
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body>
+  <a href="#admin-main" class="skip-link">Langsung ke area kerja admin</a>
+
+  <header class="admin-topbar">
+    <div class="topbar-left">
+      <a href="/" class="brand-title">SAPA NAMBASO Admin</a>
+      <span id="admin-role-badge" class="role-badge" hidden></span>
+    </div>
+    <div class="topbar-right">
+      <button type="button" id="admin-theme-toggle" class="theme-toggler-btn" aria-pressed="false" aria-label="Ganti ke mode gelap" title="Ganti Mode Terang / Gelap" data-slot="theme-toggler-button">
+        <span class="theme-icon-swap" aria-hidden="true">
+          <svg class="theme-icon theme-icon-sun aui-lucide-icon" data-aui-icon="sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2"></path>
+            <path d="M12 20v2"></path>
+            <path d="m4.93 4.93 1.41 1.41"></path>
+            <path d="m17.66 17.66 1.41 1.41"></path>
+            <path d="M2 12h2"></path>
+            <path d="M20 12h2"></path>
+            <path d="m6.34 17.66-1.41 1.41"></path>
+            <path d="m19.07 4.93-1.41 1.41"></path>
+          </svg>
+          <svg class="theme-icon theme-icon-moon aui-lucide-icon" data-aui-icon="moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </span>
+        <span class="sr-only">Ganti Mode Terang / Gelap</span>
+      </button>
+      <a href="/" class="btn btn-secondary">Lihat Situs Publik</a>
+      <button type="button" id="logout-btn" class="btn btn-ghost" hidden>Keluar</button>
+    </div>
+  </header>
+
+  <main id="admin-main" tabindex="-1">
+    <section id="login-view" class="login-section" aria-labelledby="login-heading">
+      <div class="login-card">
+        <h1 id="login-heading">Masuk Panel Admin SAPA NAMBASO</h1>
+        <p class="login-intro">Gunakan akun Super Admin UPTB Pendapatan Daerah Wilayah I Palu. Akses dilindungi pembatasan percobaan masuk dan verifikasi dua langkah.</p>
+
+        <div id="login-error-box" class="alert-box alert-error" role="alert" hidden></div>
+
+        <form id="login-form" novalidate>
+          <div class="field-group">
+            <label for="login-email">Email Petugas</label>
+            <input type="email" id="login-email" name="email" autocomplete="email" placeholder="nama@samsatpalu.go.id" required>
+          </div>
+          <div class="field-group">
+            <label for="login-password">Kata Sandi</label>
+            <input type="password" id="login-password" name="password" autocomplete="current-password" placeholder="Masukkan kata sandi petugas" required>
+          </div>
+          <div class="form-actions">
+            <button type="submit" id="login-submit-btn" class="btn btn-accent">Lanjut ke Verifikasi Dua Langkah</button>
+            <button type="button" id="open-reset-btn" class="btn btn-ghost">Lupa Kata Sandi</button>
+          </div>
+        </form>
+
+        <form id="otp-form" novalidate hidden>
+          <p class="otp-instruction">Masukkan kode 6 digit verifikasi dua langkah dari aplikasi autentikator atau kode verifikasi lokal yang diterbitkan server.</p>
+          <div id="dev-otp-notice" class="alert-box alert-info" hidden></div>
+          <div class="field-group">
+            <label for="otp-code">Kode Verifikasi 6 Digit</label>
+            <input type="text" id="otp-code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="123456" autocomplete="one-time-code" required>
+          </div>
+          <div class="form-actions">
+            <button type="submit" id="otp-submit-btn" class="btn btn-accent">Verifikasi dan Masuk</button>
+            <button type="button" id="otp-back-btn" class="btn btn-secondary">Kembali</button>
+          </div>
+        </form>
+
+        <form id="reset-form" novalidate hidden>
+          <h2>Reset Kata Sandi Petugas</h2>
+          <p>Masukkan email petugas terdaftar untuk menerbitkan token pengaturan ulang kata sandi.</p>
+          <div class="field-group">
+            <label for="reset-email">Email Terdaftar</label>
+            <input type="email" id="reset-email" name="email" placeholder="nama@samsatpalu.go.id" required>
+          </div>
+          <div id="reset-token-step" hidden>
+            <div id="reset-token-hint" class="alert-box alert-info" hidden></div>
+            <div class="field-group">
+              <label for="reset-token">Token Reset</label>
+              <input type="text" id="reset-token" name="token" placeholder="Masukkan token reset">
+            </div>
+            <div class="field-group">
+              <label for="reset-new-password">Kata Sandi Baru (minimal 12 karakter)</label>
+              <input type="password" id="reset-new-password" name="newPassword" placeholder="Minimal 12 karakter dengan huruf besar, angka, dan simbol">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" id="reset-submit-btn" class="btn btn-primary">Kirim Permintaan Reset</button>
+            <button type="button" id="reset-back-btn" class="btn btn-secondary">Batal</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section id="workspace-view" class="workspace-shell" hidden>
+      <div class="decision-bar" role="region" aria-label="Status penerbitan draf dan kesegaran data">
+        <div class="decision-status">
+          <span id="draft-status-pill" class="status-pill">Memeriksa status...</span>
+          <strong id="draft-state-label">Memeriksa status draf...</strong>
+          <span id="published-meta-label" class="meta-text"></span>
+        </div>
+        <div class="decision-actions">
+          <a href="/?preview=1" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">Lihat Pratinjau</a>
+          <button type="button" id="discard-draft-btn" class="btn btn-ghost">Batalkan Perubahan Draf</button>
+          <button type="button" id="publish-btn" class="btn btn-accent">Terbitkan ke Publik</button>
+        </div>
+      </div>
+
+      <div id="staleness-banner" class="alert-box alert-warn" hidden></div>
+      <div id="workspace-feedback" class="alert-box" role="status" aria-live="polite" hidden></div>
+
+      <div class="workspace-layout">
+        <aside class="admin-sidebar" aria-label="Menu modul panel admin">
+          <div class="mobile-module-picker">
+            <label for="mobile-module-select">Pilih Modul Pengelolaan</label>
+            <select id="mobile-module-select"></select>
+          </div>
+          <nav id="admin-module-nav" class="module-nav"></nav>
+        </aside>
+
+        <div id="module-content" class="module-content">
+          <div class="state-box">
+            <p>Memuat data panel admin...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="missions-dialog" class="admin-dialog admin-dialog-lg glass-dialog" aria-labelledby="missions-dialog-title">
+    <div class="dialog-header glass-dialog-header">
+      <h2 id="missions-dialog-title">Kelola Daftar Misi Instansi</h2>
+      <button type="button" class="glass-close-btn" id="missions-dialog-close" aria-label="Tutup jendela misi">
+        <svg class="aui-lucide-icon" data-aui-icon="x" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dialog-body glass-dialog-body">
+      <p class="meta-text">Tambahkan poin misi satu per satu, ubah kalimatnya secara langsung, atau atur urutan tampilnya pada profil publik.</p>
+      <div class="repeater-inline-row" style="margin-bottom:1rem">
+        <label for="new-mission-input" class="sr-only">Tulis poin misi baru</label>
+        <input type="text" id="new-mission-input" placeholder="Ketik poin misi baru di sini lalu klik Tambah...">
+        <button type="button" id="add-mission-modal-btn" class="btn btn-accent">+ Tambah Misi</button>
+      </div>
+      <div id="missions-modal-list" class="repeater-list"></div>
+    </div>
+    <div class="dialog-footer glass-dialog-footer">
+      <button type="button" class="btn btn-secondary" id="missions-dialog-cancel">Batal</button>
+      <button type="button" class="btn btn-primary" id="missions-dialog-apply">Terapkan ke Form Profil</button>
+    </div>
+  </dialog>
+
+  <dialog id="org-roles-dialog" class="admin-dialog admin-dialog-lg glass-dialog" aria-labelledby="org-roles-dialog-title">
+    <div class="dialog-header glass-dialog-header">
+      <h2 id="org-roles-dialog-title">Kelola Daftar Jabatan dan Struktur Organisasi</h2>
+      <button type="button" class="glass-close-btn" id="org-roles-dialog-close" aria-label="Tutup daftar jabatan">
+        <svg class="aui-lucide-icon" data-aui-icon="x" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="dialog-body glass-dialog-body">
+      <div class="repeater-header">
+        <p class="meta-text" style="margin:0">Tambah atau kurangi jabatan, atur urutan, lalu klik <strong>Edit Detail Pejabat</strong> untuk mengisi nama, foto, dan rincian profil.</p>
+        <button type="button" id="add-org-role-modal-btn" class="btn btn-accent">+ Tambah Jabatan Baru</button>
+      </div>
+      <div id="org-roles-modal-list" class="repeater-list"></div>
+    </div>
+    <div class="dialog-footer glass-dialog-footer">
+      <button type="button" class="btn btn-primary" id="org-roles-dialog-done">Selesai &amp; Terapkan ke Form Profil</button>
+    </div>
+  </dialog>
+
+  <dialog id="official-detail-dialog" class="admin-dialog admin-dialog-lg glass-dialog" aria-labelledby="official-detail-title">
+    <div class="dialog-header glass-dialog-header">
+      <h2 id="official-detail-title">Edit Detail Pejabat Struktural</h2>
+      <button type="button" class="glass-close-btn" id="official-detail-close" aria-label="Tutup edit detail pejabat">
+        <svg class="aui-lucide-icon" data-aui-icon="x" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="official-detail-form" novalidate>
+      <div class="dialog-body glass-dialog-body">
+        <div class="grid-2">
+          <div class="field-group">
+            <label for="off-role">Jabatan Struktural</label>
+            <input type="text" id="off-role" placeholder="Contoh: Kepala UPTB Wilayah I Palu" required>
+          </div>
+          <div class="field-group">
+            <label for="off-holder">Nama Lengkap dan Gelar Pejabat</label>
+            <input type="text" id="off-holder" placeholder="Contoh: Drs. Ahmad Subagio, M.Si." required>
+          </div>
+        </div>
+        <div class="field-group">
+          <label for="off-tagline">Subjudul / Deskripsi Singkat</label>
+          <input type="text" id="off-tagline" placeholder="Contoh: Mengenal Lebih Dekat Kepala UPTB Pendapatan Daerah Wilayah I Palu">
+        </div>
+        <div id="off-photo-picker-wrap"></div>
+        <div class="field-group" style="margin-bottom:0">
+          <label for="off-bio">Rincian Profil dan Tugas Pejabat</label>
+          <textarea id="off-bio" rows="4" placeholder="Tuliskan rincian profil dan tanggung jawab jabatan yang tampil di halaman publik..."></textarea>
+        </div>
+      </div>
+      <div class="dialog-footer glass-dialog-footer">
+        <button type="button" class="btn btn-secondary" id="official-detail-back">Kembali ke Daftar Jabatan</button>
+        <button type="submit" class="btn btn-accent">Simpan Detail Pejabat</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="location-detail-dialog" class="admin-dialog admin-dialog-lg glass-dialog" aria-labelledby="location-detail-title">
+    <div class="dialog-header glass-dialog-header">
+      <h2 id="location-detail-title">Edit Detail Lokasi Layanan</h2>
+      <button type="button" class="glass-close-btn" id="location-detail-close" aria-label="Tutup edit detail lokasi">
+        <svg class="aui-lucide-icon" data-aui-icon="x" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="location-detail-form" novalidate>
+      <div class="dialog-body glass-dialog-body">
+        <div class="grid-2">
+          <div class="field-group">
+            <label for="dlg-loc-name">Nama Lokasi</label>
+            <input type="text" id="dlg-loc-name" placeholder="Contoh: Samsat Corner Thamrin" required>
+          </div>
+          <div class="field-group">
+            <label for="dlg-loc-primary">Jenis Lokasi</label>
+            <select id="dlg-loc-primary">
+              <option value="false">Gerai / Corner / Drive Thru</option>
+              <option value="true">Kantor Induk</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="dlg-loc-addr">Alamat Lengkap</label>
+          <input type="text" id="dlg-loc-addr" placeholder="Contoh: Jl. Moh. Thamrin No. 55, Besusu Tim., Kec. Palu Tim., Kota Palu" required>
+        </div>
+
+        <div class="grid-2">
+          <div class="field-group">
+            <label for="dlg-loc-scope">Layanan yang Dilayani</label>
+            <input type="text" id="dlg-loc-scope" placeholder="Contoh: Pengesahan Pajak Tahunan, STNK 5 Tahunan">
+          </div>
+          <div class="field-group">
+            <label for="dlg-loc-hours">Jam Khusus Lokasi</label>
+            <input type="text" id="dlg-loc-hours" placeholder="Contoh: Senin sampai Jumat 08.00 s.d. 15.00 WITA">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="dlg-loc-map">Tautan Peta / Google Maps Gerai</label>
+          <div style="display:flex;gap:0.5rem;align-items:stretch;">
+            <input type="url" id="dlg-loc-map" placeholder="https://maps.app.goo.gl/... atau tautan Google Maps" style="flex:1;">
+            <button type="button" class="btn btn-secondary btn-sm" id="dlg-loc-gen-map-btn" title="Buat tautan otomatis dari alamat gerai">
+              <svg class="aui-lucide-icon" data-aui-icon="navigation" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg> Otomatis
+            </button>
+            <a id="dlg-loc-map-preview" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" title="Uji buka tautan Google Maps" style="display:inline-flex;align-items:center;padding:0.45rem 0.65rem;">
+              <svg class="aui-lucide-icon" data-aui-icon="external-link" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+          </div>
+          <small class="field-hint" style="display:block;margin-top:0.35rem;font-size:0.8rem;color:var(--text-secondary);">
+            Atur tautan lokasi Google Maps gerai. Anda dapat menempelkan URL Google Maps langsung, atau klik tombol <strong>Otomatis</strong> untuk menghasilkan tautan dari alamat di atas.
+          </small>
+        </div>
+
+        <div id="dlg-loc-photo-wrap"></div>
+      </div>
+      <div class="dialog-footer glass-dialog-footer">
+        <button type="button" class="btn btn-secondary" id="location-detail-cancel">Batal</button>
+        <button type="submit" class="btn btn-accent">Terapkan ke Draf Lokasi</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="quick-upload-dialog" class="admin-dialog glass-dialog" aria-labelledby="quick-upload-title">
+    <div class="dialog-header glass-dialog-header">
+      <h2 id="quick-upload-title">Unggah Foto atau Logo Baru</h2>
+      <button type="button" class="glass-close-btn" id="quick-upload-close" aria-label="Tutup jendela unggah foto">
+        <svg class="aui-lucide-icon" data-aui-icon="x" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="quick-upload-form" novalidate>
+      <div class="dialog-body glass-dialog-body">
+        <p class="meta-text">Pilih file PNG, JPG, WebP, atau SVG (maksimal 2 MB). Gambar otomatis dikompresi agar cepat dibuka warga.</p>
+        <div id="quick-upload-dropzone" class="upload-dropzone">
+          <input type="file" id="quick-media-file" accept="image/png,image/jpeg,image/webp,image/svg+xml" class="sr-only">
+          <label for="quick-media-file" class="btn btn-accent">Pilih File Foto dari Komputer / HP</label>
+          <span class="meta-text">Atau seret dan jatuhkan file gambar ke area ini</span>
+        </div>
+        <div id="quick-upload-preview" class="upload-preview-box" hidden>
+          <img id="quick-upload-preview-img" src="" alt="Pratinjau foto yang dipilih">
+          <div class="upload-preview-meta">
+            <strong id="quick-upload-file-name"></strong>
+            <span id="quick-upload-file-info" class="meta-text"></span>
+          </div>
+        </div>
+        <div class="field-group" style="margin-top:1rem">
+          <label for="quick-media-crop">Ukuran Pangkas Otomatis</label>
+          <select id="quick-media-crop">
+            <option value="free">Ukuran Asli (Maks Lebar 1280px)</option>
+            <option value="16:10">16:10 (Foto Lokasi / Beranda)</option>
+            <option value="4:3">4:3 (Dokumen / Loket)</option>
+          </select>
+        </div>
+        <div class="field-group" style="margin-bottom:0">
+          <label for="quick-media-alt">Keterangan Gambar (Wajib, untuk pembaca layar)</label>
+          <input type="text" id="quick-media-alt" placeholder="Contoh: Logo resmi SAPA NAMBASO atau foto kantor depan" required>
+        </div>
+        <div id="quick-upload-error" class="alert-box alert-error" style="margin-top:0.875rem;margin-bottom:0" hidden></div>
+      </div>
+      <div class="dialog-footer glass-dialog-footer">
+        <button type="button" class="btn btn-secondary" id="quick-upload-cancel">Batal</button>
+        <button type="submit" class="btn btn-accent" id="quick-upload-submit">Unggah &amp; Gunakan Foto Ini</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="holiday-date-dialog" class="admin-dialog glass-dialog" aria-labelledby="holiday-dialog-title">
+    <div class="dialog-header glass-dialog-header">
+      <div>
+        <span id="holiday-dialog-date-badge" class="holiday-date-badge">Tanggal Dipilih</span>
+        <h2 id="holiday-dialog-title">Atur Hari Libur &amp; Pengecualian</h2>
+      </div>
+      <button type="button" class="glass-close-btn" id="holiday-dialog-close" aria-label="Tutup pengaturan tanggal libur">
+        <svg class="aui-lucide-icon" data-aui-icon="x" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="holiday-date-form" novalidate>
+      <div class="dialog-body glass-dialog-body">
+        <input type="hidden" id="holiday-dialog-iso">
+        <div class="field-group">
+          <label for="holiday-dialog-name">Nama Hari Libur / Kegiatan Khusus</label>
+          <input type="text" id="holiday-dialog-name" required placeholder="Contoh: Libur Hari Raya Idulfitri">
+        </div>
+        <div class="field-group">
+          <label for="holiday-dialog-status">Status Layanan pada Tanggal Ini</label>
+          <select id="holiday-dialog-status">
+            <option value="closed">Tutup Penuh (Libur Nasional / Cuti)</option>
+            <option value="special">Buka dengan Jam Khusus</option>
+          </select>
+        </div>
+        <div id="holiday-dialog-hours-wrap" class="grid-2" hidden>
+          <div class="field-group">
+            <label for="holiday-dialog-open">Jam Buka Khusus</label>
+            <input type="time" id="holiday-dialog-open" value="08:00">
+          </div>
+          <div class="field-group">
+            <label for="holiday-dialog-close-time">Jam Tutup Khusus</label>
+            <input type="time" id="holiday-dialog-close-time" value="12:00">
+          </div>
+        </div>
+        <div class="field-group" style="margin-bottom:0">
+          <label for="holiday-dialog-note">Keterangan Tambahan untuk Publik (Opsional)</label>
+          <input type="text" id="holiday-dialog-note" placeholder="Contoh: Gunakan layanan SIGNAL selama loket tutup.">
+        </div>
+      </div>
+      <div class="dialog-footer glass-dialog-footer holiday-dialog-footer">
+        <button type="button" class="btn btn-danger btn-sm" id="holiday-dialog-delete" hidden>Hapus Pengecualian</button>
+        <div class="holiday-footer-right">
+          <button type="button" class="btn btn-secondary" id="holiday-dialog-cancel">Batal</button>
+          <button type="submit" class="btn btn-accent" id="holiday-dialog-save">Terapkan ke Kalender</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="admin-confirm-dialog" class="admin-dialog glass-dialog admin-confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message">
+    <div class="dialog-header glass-dialog-header">
+      <div class="confirm-header-title">
+        <span class="confirm-icon-wrap" aria-hidden="true">
+          <svg class="aui-lucide-icon" data-aui-icon="alert-triangle" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        </span>
+        <h2 id="confirm-dialog-title">Konfirmasi Perubahan</h2>
+      </div>
+    </div>
+    <div class="dialog-body glass-dialog-body">
+      <p id="confirm-dialog-message" class="confirm-dialog-message">Apakah Anda yakin ingin menyimpan perubahan ini?</p>
+      <div id="confirm-dialog-input-wrap" class="field-group" style="margin-top:0.85rem;margin-bottom:0" hidden>
+        <label id="confirm-dialog-input-label" for="confirm-dialog-input">Catatan Revisi (Opsional)</label>
+        <input type="text" id="confirm-dialog-input" placeholder="Contoh: Pembaruan informasi layanan terbaru">
+      </div>
+    </div>
+    <div class="dialog-footer glass-dialog-footer">
+      <button type="button" class="btn btn-secondary" id="confirm-dialog-cancel">Batal</button>
+      <button type="button" class="btn btn-primary" id="confirm-dialog-ok">Ya, Simpan Perubahan</button>
+    </div>
+  </dialog>
+
+  <ol id="admin-toast-stack" class="admin-toast-stack" aria-live="polite" aria-label="Notifikasi status panel admin"></ol>
+
+  <div id="admin-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  <script src="/vendor/echarts.min.js" defer></script>
+  <script src="/admin.js" defer></script>
+</body>
+</html>
+

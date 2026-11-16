@@ -1,0 +1,6 @@
+# Ganti :80 dengan nama domain Anda (misal: sapanambaso.samsatpalu.go.id)
+# untuk mengaktifkan HTTPS otomatis dari Let's Encrypt.
+:80 {
+	encode gzip zstd
+	reverse_proxy 127.0.0.1:3000
+}

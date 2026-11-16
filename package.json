@@ -1,0 +1,17 @@
+{
+  "name": "sapa-nambaso",
+  "version": "1.0.0",
+  "description": "Website resmi SAPA NAMBASO UPTB Pendapatan Daerah Wilayah I Palu (Samsat Palu) dengan panel admin dan analitik privasi terjaga.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node scripts/verify-antislop.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "private": true,
+  "dependencies": {
+    "echarts": "^6.1.0"
+  }
+}
