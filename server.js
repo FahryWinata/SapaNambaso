@@ -13,6 +13,7 @@ const {
   hasUnpublishedChanges,
   getStalenessAlerts,
   getMediaUsageMap,
+  replaceMediaReferences,
   recordAnalyticsEvent
 } = require('./src/db');
 const { hashPassword, verifyPassword } = require('./src/seed');
@@ -656,20 +657,22 @@ async function handleRequest(req, res) {
       sendJson(res, 400, { error: 'Aset bawaan sistem tidak dapat dihapus.' });
       return;
     }
-    const draftUsage = getMediaUsageMap(db.draftContent)[mediaId] || [];
-    const pubUsage = getMediaUsageMap(db.publishedContent)[mediaId] || [];
-    const usedIn = [...new Set([...draftUsage, ...pubUsage])];
-    if (usedIn.length > 0) {
-      sendJson(res, 409, { error: `Gambar masih digunakan di: ${usedIn.join(', ')}. Ganti penggunaannya terlebih dahulu sebelum menghapus.` });
-      return;
-    }
+    const replacedDraft = replaceMediaReferences(db.draftContent, mediaId);
+    const replacedPub = replaceMediaReferences(db.publishedContent, mediaId);
+    const replacedCount = replacedDraft + replacedPub;
     if (item.url.startsWith('/uploads/')) {
       const diskPath = path.join(UPLOADS_DIR, path.basename(item.url));
       if (fs.existsSync(diskPath)) fs.unlinkSync(diskPath);
     }
     db.media = db.media.filter((m) => m.id !== mediaId);
     saveDatabase(db);
-    sendJson(res, 200, { ok: true });
+    sendJson(res, 200, {
+      ok: true,
+      replacedCount,
+      draftContent: db.draftContent,
+      publishedContent: db.publishedContent,
+      hasUnpublishedChanges: hasUnpublishedChanges(db)
+    });
     return;
   }
 

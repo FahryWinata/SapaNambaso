@@ -156,7 +156,14 @@ function createInitialContent() {
       siteLogoId: 'media-logo-sapa',
       agencyLogoId: 'media-logo-instansi',
       faviconUrl: '/assets/placeholders/logo-sapa-nambaso.svg',
-      sharePreviewImageId: 'media-hero-kantor'
+      sharePreviewImageId: 'media-hero-kantor',
+      themeColor: '#38BDF8',
+      themeStyle: 'gradient',
+      splashEnabled: true,
+      splashShowText: true,
+      splashImageId: 'media-logo-sapa',
+      splashTitle: 'Selamat Datang di SAPA NAMBASO',
+      splashSubtitle: 'UPTB Pendapatan Daerah Wilayah I Palu (Samsat Palu)'
     },
     hero: {
       title: 'SAPA NAMBASO',

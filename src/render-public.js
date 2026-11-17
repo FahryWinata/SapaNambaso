@@ -1,6 +1,7 @@
 'use strict';
 
 const { buildGoogleMapsDirectionsUrl } = require('./seed');
+const { buildThemeCss } = require('../public/theme-utils');
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -479,6 +480,26 @@ function renderPublicPage(db, options = {}) {
     `;
   }).join('');
 
+  const splashEnabled = Boolean(content.identity?.splashEnabled);
+  const splashShowText = content.identity?.splashShowText !== false;
+  const splashMedia = getMediaById(mediaList, content.identity?.splashImageId || content.identity?.siteLogoId);
+  const splashTitle = content.identity?.splashTitle || 'Selamat Datang di SAPA NAMBASO';
+  const splashSubtitle = content.identity?.splashSubtitle || '';
+  const splashHtml = splashEnabled ? `
+  <div id="sapa-splash" class="sapa-splash" role="status" aria-live="polite" data-duration="3000">
+    <div class="sapa-splash-inner">
+      <div class="sapa-splash-media">
+        <img src="${escapeHtml(splashMedia.url)}" alt="${escapeHtml(splashMedia.alt || splashTitle)}" decoding="async">
+      </div>
+      ${splashShowText ? `
+        <div class="sapa-splash-copy">
+          <strong class="sapa-splash-title">${escapeHtml(splashTitle)}</strong>
+          ${splashSubtitle ? `<span class="sapa-splash-subtitle">${escapeHtml(splashSubtitle)}</span>` : ''}
+        </div>
+      ` : ''}
+    </div>
+  </div>` : '';
+
   return `<!doctype html>
 <html lang="id" data-theme="light">
 <head>
@@ -493,10 +514,14 @@ function renderPublicPage(db, options = {}) {
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="${escapeHtml(safeUrl(sharePreviewMedia.url))}">
   <link rel="icon" href="${escapeHtml(safeUrl(content.identity?.faviconUrl || siteLogo.url))}">
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/styles.css">${(() => {
+    const customCss = buildThemeCss(content.identity?.themeColor, content.identity?.themeStyle);
+    return customCss ? `\n  <style id="sapa-custom-theme">\n${customCss}\n  </style>` : '';
+  })()}
   <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 </head>
 <body>
+  ${splashHtml}
   <a href="#konten-utama" class="skip-link">Langsung ke konten utama</a>
   ${previewBanner}
 

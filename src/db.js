@@ -192,6 +192,7 @@ function getMediaUsageMap(content) {
   addUse(content.identity?.siteLogoId, 'Identitas: Logo SAPA NAMBASO');
   addUse(content.identity?.agencyLogoId, 'Identitas: Logo Instansi');
   addUse(content.identity?.sharePreviewImageId, 'Identitas: Gambar Pratinjau Tautan');
+  addUse(content.identity?.splashImageId, 'Identitas: Logo Layar Sambutan');
   addUse(content.hero?.heroImageId, 'Beranda: Foto Utama');
   addUse(content.profile?.orgStructureImageId, 'Profil: Bagan Struktur Organisasi');
 
@@ -211,6 +212,41 @@ function getMediaUsageMap(content) {
     addUse(partner.logoId, `Mitra: ${partner.name}`);
   }
   return usage;
+}
+
+function replaceMediaReferences(content, targetMediaId) {
+  if (!content || !targetMediaId) return 0;
+  let count = 0;
+  const swapField = (obj, key, fallbackId) => {
+    if (obj && obj[key] === targetMediaId) {
+      obj[key] = fallbackId;
+      count += 1;
+    }
+  };
+
+  swapField(content.identity, 'siteLogoId', 'media-logo-sapa');
+  swapField(content.identity, 'agencyLogoId', 'media-logo-instansi');
+  swapField(content.identity, 'sharePreviewImageId', 'media-hero-kantor');
+  swapField(content.identity, 'splashImageId', 'media-logo-sapa');
+  swapField(content.hero, 'heroImageId', 'media-hero-kantor');
+  swapField(content.profile, 'orgStructureImageId', 'media-struktur-org');
+
+  for (const roleItem of content.profile?.orgRoles || []) {
+    swapField(roleItem, 'photoId', 'media-foto-pejabat');
+  }
+  for (const svc of content.services || []) {
+    swapField(svc, 'imageId', 'media-lokasi-default');
+  }
+  for (const loc of content.locations || []) {
+    swapField(loc, 'imageId', 'media-lokasi-default');
+  }
+  for (const ann of content.announcements || []) {
+    swapField(ann, 'imageId', 'media-hero-kantor');
+  }
+  for (const partner of content.partners || []) {
+    swapField(partner, 'logoId', 'media-logo-instansi');
+  }
+  return count;
 }
 
 function getDailyVisitorHash(rawIp, userAgent) {
@@ -272,6 +308,7 @@ module.exports = {
   hasUnpublishedChanges,
   getStalenessAlerts,
   getMediaUsageMap,
+  replaceMediaReferences,
   recordAnalyticsEvent,
   BACKUP_DIR,
   DB_PATH

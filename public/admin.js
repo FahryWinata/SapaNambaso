@@ -102,7 +102,6 @@
         btn.dataset.auiSummaryStop = '1';
         btn.addEventListener('click', (ev) => {
           ev.preventDefault();
-          ev.stopPropagation();
         });
       });
 
@@ -164,7 +163,7 @@
     listEl.dataset.auiSortableBound = '1';
 
     const itemSelector = options.itemSelector || '.repeater-card';
-    const onReorder = typeof options.onReorder === 'function' ? options.onReorder : () => {};
+    const onReorder = typeof options.onReorder === 'function' ? options.onReorder : () => { };
     const prefersReduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const SPRING_REFLOW_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
@@ -1907,11 +1906,11 @@
 
   function clearActiveEcharts() {
     activeChartObservers.forEach((obs) => {
-      try { obs.disconnect(); } catch {}
+      try { obs.disconnect(); } catch { }
     });
     activeChartObservers = [];
     activeEcharts.forEach((ch) => {
-      try { ch.dispose(); } catch {}
+      try { ch.dispose(); } catch { }
     });
     activeEcharts = [];
   }
@@ -1960,7 +1959,7 @@
 
   window.addEventListener('resize', () => {
     activeEcharts.forEach((ch) => {
-      try { ch.resize(); } catch {}
+      try { ch.resize(); } catch { }
     });
   });
 
@@ -2451,7 +2450,7 @@
     // Reveal any chart card that may not have had a chart initialization
     document.querySelectorAll('.chart-card').forEach((card) => {
       if (!card.classList.contains('is-revealed')) {
-        observeAndInitChart(card, () => {});
+        observeAndInitChart(card, () => { });
       }
     });
   }
@@ -2680,41 +2679,48 @@
         </div>
         <div class="grid-2">
           ${renderMediaPickerField({
-            selectId: 'id-siteLogo',
-            label: 'Logo SAPA NAMBASO',
-            selectedId: id.siteLogoId,
-            defaultAlt: 'Logo resmi SAPA NAMBASO Samsat Palu',
-            readOnlyAttr,
-            cropDefault: 'free'
-          })}
+      selectId: 'id-siteLogo',
+      label: 'Logo SAPA NAMBASO',
+      selectedId: id.siteLogoId,
+      defaultAlt: 'Logo resmi SAPA NAMBASO Samsat Palu',
+      readOnlyAttr,
+      cropDefault: 'free'
+    })}
           ${renderMediaPickerField({
-            selectId: 'id-agencyLogo',
-            label: 'Logo Instansi (Samsat / Bapenda / Mitra)',
-            selectedId: id.agencyLogoId,
-            defaultAlt: 'Logo Bapenda Provinsi Sulawesi Tengah / Samsat Palu',
-            readOnlyAttr,
-            cropDefault: 'free'
-          })}
+      selectId: 'id-agencyLogo',
+      label: 'Logo Instansi (Samsat / Bapenda / Mitra)',
+      selectedId: id.agencyLogoId,
+      defaultAlt: 'Logo Bapenda Provinsi Sulawesi Tengah / Samsat Palu',
+      readOnlyAttr,
+      cropDefault: 'free'
+    })}
           ${renderMediaPickerField({
-            selectId: 'id-sharePreview',
-            label: 'Gambar Pratinjau Saat Tautan Dibagikan',
-            selectedId: id.sharePreviewImageId,
-            defaultAlt: 'Gambar pratinjau SAPA NAMBASO Samsat Palu',
-            readOnlyAttr,
-            cropDefault: '16:10'
-          })}
+      selectId: 'id-sharePreview',
+      label: 'Gambar Pratinjau Saat Tautan Dibagikan',
+      selectedId: id.sharePreviewImageId,
+      defaultAlt: 'Gambar pratinjau SAPA NAMBASO Samsat Palu',
+      readOnlyAttr,
+      cropDefault: '16:10'
+    })}
           <div class="field-group">
             <label for="id-favicon">Alamat Favicon</label>
             <input type="text" id="id-favicon" value="${esc(id.faviconUrl)}" ${readOnlyAttr}>
           </div>
         </div>
+        ${renderThemeColorPicker(id.themeColor, id.themeStyle, readOnlyAttr)}
+        ${renderSplashSettings(id, readOnlyAttr)}
         <button type="submit" class="btn btn-primary" ${readOnlyAttr}>Simpan Draf Identitas</button>
       </form>
     `;
     bindMediaPickers(moduleContent);
+    bindThemeColorPicker(id.themeColor, id.themeStyle, Boolean(readOnlyAttr));
+    bindSplashSettings();
 
     document.getElementById('identity-form').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const rawTheme = document.getElementById('id-themeColor').value.trim();
+      const normalizedTheme = window.SapaTheme?.normalizeHex(rawTheme) || '#38BDF8';
+      const themeStyle = document.getElementById('id-themeStyle')?.value === 'flat' ? 'flat' : 'gradient';
       await saveDraftSection('identity', {
         siteName: document.getElementById('id-siteName').value.trim(),
         siteFullName: document.getElementById('id-siteFullName').value.trim(),
@@ -2723,8 +2729,358 @@
         siteLogoId: document.getElementById('id-siteLogo').value,
         agencyLogoId: document.getElementById('id-agencyLogo').value,
         sharePreviewImageId: document.getElementById('id-sharePreview').value,
-        faviconUrl: document.getElementById('id-favicon').value.trim()
+        faviconUrl: document.getElementById('id-favicon').value.trim(),
+        themeColor: normalizedTheme,
+        themeStyle,
+        splashEnabled: Boolean(document.getElementById('id-splashEnabled')?.checked),
+        splashShowText: Boolean(document.getElementById('id-splashShowText')?.checked),
+        splashImageId: document.getElementById('id-splashImage')?.value || id.siteLogoId,
+        splashTitle: document.getElementById('id-splashTitle')?.value.trim() || 'Selamat Datang di SAPA NAMBASO',
+        splashSubtitle: document.getElementById('id-splashSubtitle')?.value.trim() || ''
       });
+    });
+  }
+
+  function renderSplashSettings(id, readOnlyAttr) {
+    const splashEnabled = Boolean(id.splashEnabled);
+    const splashShowText = id.splashShowText !== false;
+    const splashImageId = id.splashImageId || id.siteLogoId || 'media-logo-sapa';
+    const splashTitle = id.splashTitle || 'Selamat Datang di SAPA NAMBASO';
+    const splashSubtitle = id.splashSubtitle ?? 'UPTB Pendapatan Daerah Wilayah I Palu (Samsat Palu)';
+
+    return `
+      <section class="aui-theme-picker-card" aria-label="Pengaturan layar sambutan (Splash Screen)">
+        <div class="aui-theme-picker-header">
+          <div class="aui-theme-picker-title">
+            <h3>Layar Sambutan 3 Detik (Splash Screen)</h3>
+            <p>Tampilkan logo atau gambar sambutan dengan animasi fade-in dan fade-out selama 3 detik sebelum halaman publik muncul.</p>
+          </div>
+          <label class="aui-swatch-pill" style="cursor:pointer">
+            <input type="checkbox" id="id-splashEnabled" ${splashEnabled ? 'checked' : ''} ${readOnlyAttr}>
+            <span>Aktifkan Layar Sambutan</span>
+          </label>
+        </div>
+        <div id="id-splash-body" ${splashEnabled ? '' : 'hidden'}>
+          ${renderMediaPickerField({
+      selectId: 'id-splashImage',
+      label: 'Logo / Gambar Layar Sambutan',
+      selectedId: splashImageId,
+      defaultAlt: 'Logo layar sambutan SAPA NAMBASO',
+      readOnlyAttr,
+      cropDefault: 'free'
+    })}
+          <div class="field-group" style="margin-top:0.5rem">
+            <label class="aui-swatch-pill" style="cursor:pointer">
+              <input type="checkbox" id="id-splashShowText" ${splashShowText ? 'checked' : ''} ${readOnlyAttr}>
+              <span>Tampilkan Teks Sambutan di Bawah Logo</span>
+            </label>
+          </div>
+          <div id="id-splash-text-fields" class="grid-2" ${splashShowText ? '' : 'hidden'}>
+            <div class="field-group" style="margin-bottom:0">
+              <label for="id-splashTitle">Judul Sambutan</label>
+              <input type="text" id="id-splashTitle" value="${esc(splashTitle)}" placeholder="Selamat Datang di SAPA NAMBASO" ${readOnlyAttr}>
+            </div>
+            <div class="field-group" style="margin-bottom:0">
+              <label for="id-splashSubtitle">Subjudul Sambutan (Opsional)</label>
+              <input type="text" id="id-splashSubtitle" value="${esc(splashSubtitle)}" placeholder="UPTB Pendapatan Daerah Wilayah I Palu" ${readOnlyAttr}>
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  function bindSplashSettings() {
+    const enabledCb = document.getElementById('id-splashEnabled');
+    const showTextCb = document.getElementById('id-splashShowText');
+    const bodyEl = document.getElementById('id-splash-body');
+    const textWrapEl = document.getElementById('id-splash-text-fields');
+    if (enabledCb && bodyEl) {
+      enabledCb.addEventListener('change', () => {
+        bodyEl.hidden = !enabledCb.checked;
+      });
+    }
+    if (showTextCb && textWrapEl) {
+      showTextCb.addEventListener('change', () => {
+        textWrapEl.hidden = !showTextCb.checked;
+      });
+    }
+  }
+
+  function renderThemeColorPicker(currentHex, currentStyle, readOnlyAttr) {
+    const theme = window.SapaTheme;
+    const activeHex = theme?.normalizeHex(currentHex) || theme?.DEFAULT_THEME_COLOR || '#38BDF8';
+    const activeStyle = currentStyle === 'flat' ? 'flat' : 'gradient';
+    const presets = theme?.THEME_PRESETS || [];
+    return `
+      <section class="aui-theme-picker-card" aria-label="Pengaturan tema warna situs publik">
+        <div class="aui-theme-picker-header">
+          <div class="aui-theme-picker-title">
+            <h3>Tema Warna Situs Publik (Color Wheel)</h3>
+            <p>Ubah warna utama halaman publik, tombol aksi, dan banner beranda dengan kontras WCAG AA otomatis.</p>
+          </div>
+          <button type="button" id="aui-theme-reset-btn" class="btn btn-secondary btn-sm" ${readOnlyAttr}>Reset ke Biru Bawaan</button>
+        </div>
+        <div class="aui-theme-picker-grid">
+          <div class="aui-wheel-column">
+            <div class="aui-wheel-wrap" id="aui-wheel-wrap" title="Geser atau klik lingkaran untuk memilih warna">
+              <canvas id="aui-wheel-canvas" class="aui-wheel-canvas" width="176" height="176"></canvas>
+              <div id="aui-wheel-thumb" class="aui-wheel-thumb" aria-hidden="true"></div>
+            </div>
+            <div class="aui-brightness-wrap">
+              <div class="aui-brightness-label">
+                <label for="aui-wheel-brightness">Kecerahan</label>
+                <span id="aui-brightness-val" class="num-tabular">100%</span>
+              </div>
+              <input type="range" id="aui-wheel-brightness" class="aui-brightness-slider" min="25" max="100" value="100" ${readOnlyAttr}>
+            </div>
+          </div>
+          <div class="aui-theme-controls-col">
+            <div class="aui-hex-row">
+              <input type="color" id="id-themeColorNative" class="aui-native-color-btn" value="${esc(activeHex)}" aria-label="Pemilih warna sistem" ${readOnlyAttr}>
+              <input type="text" id="id-themeColor" class="aui-hex-input" value="${esc(activeHex)}" maxlength="7" placeholder="#38BDF8" aria-label="Kode warna HEX" ${readOnlyAttr}>
+              <input type="hidden" id="id-themeStyle" value="${esc(activeStyle)}">
+              <div class="aui-style-toggle" role="group" aria-label="Gaya warna banner beranda">
+                <button type="button" class="aui-style-btn ${activeStyle === 'gradient' ? 'is-active' : ''}" data-theme-style="gradient" aria-pressed="${activeStyle === 'gradient'}" ${readOnlyAttr}>Gradien</button>
+                <button type="button" class="aui-style-btn ${activeStyle === 'flat' ? 'is-active' : ''}" data-theme-style="flat" aria-pressed="${activeStyle === 'flat'}" ${readOnlyAttr}>Flat (Solid)</button>
+              </div>
+            </div>
+            <div class="aui-preset-swatches" role="group" aria-label="Pilihan warna cepat">
+              ${presets.map((p) => `
+                <button type="button" class="aui-swatch-pill ${p.hex === activeHex ? 'is-active' : ''}" data-preset-hex="${esc(p.hex)}" ${readOnlyAttr}>
+                  <span class="aui-swatch-dot" style="background:${esc(p.hex)}"></span>
+                  <span>${esc(p.name)}</span>
+                </button>
+              `).join('')}
+            </div>
+            <div class="aui-theme-preview-box" id="aui-theme-preview-box">
+              <div class="aui-theme-preview-hero" id="aui-theme-preview-hero">
+                <div>
+                  <strong id="aui-preview-title" style="display:block;font-size:0.95rem">SAPA NAMBASO</strong>
+                  <span id="aui-preview-sub" style="font-size:0.78rem;opacity:0.9">Pratinjau Banner &amp; Tombol Publik</span>
+                </div>
+                <span class="aui-theme-preview-cta" id="aui-theme-preview-cta">Cek Pajak Kendaraan</span>
+              </div>
+              <div class="aui-theme-contrast-meta">
+                <span>Kontras Tombol: <strong id="aui-contrast-ratio" class="num-tabular">-</strong></span>
+                <span id="aui-contrast-badge" class="aui-contrast-badge is-pass">WCAG AA Aman</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  function bindThemeColorPicker(initialHex, initialStyle, isReadOnly) {
+    const theme = window.SapaTheme;
+    if (!theme) return;
+
+    const canvas = document.getElementById('aui-wheel-canvas');
+    const wheelWrap = document.getElementById('aui-wheel-wrap');
+    const thumb = document.getElementById('aui-wheel-thumb');
+    const brightnessInput = document.getElementById('aui-wheel-brightness');
+    const brightnessLabel = document.getElementById('aui-brightness-val');
+    const nativeInput = document.getElementById('id-themeColorNative');
+    const hexInput = document.getElementById('id-themeColor');
+    const styleInput = document.getElementById('id-themeStyle');
+    const styleBtns = Array.from(document.querySelectorAll('.aui-style-btn[data-theme-style]'));
+    const resetBtn = document.getElementById('aui-theme-reset-btn');
+    const previewBox = document.getElementById('aui-theme-preview-box');
+    const previewHero = document.getElementById('aui-theme-preview-hero');
+    const previewCta = document.getElementById('aui-theme-preview-cta');
+    const ratioEl = document.getElementById('aui-contrast-ratio');
+    const badgeEl = document.getElementById('aui-contrast-badge');
+    const presetBtns = Array.from(document.querySelectorAll('.aui-swatch-pill[data-preset-hex]'));
+
+    if (!canvas || !wheelWrap || !thumb || !brightnessInput || !nativeInput || !hexInput) return;
+
+    let currentHex = theme.normalizeHex(initialHex) || theme.DEFAULT_THEME_COLOR;
+    let currentStyle = initialStyle === 'flat' ? 'flat' : 'gradient';
+    let hsv = theme.hexToHsv(currentHex);
+    const size = canvas.width;
+    const radius = size / 2;
+
+    function drawWheel(valPct) {
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const img = ctx.createImageData(size, size);
+      const data = img.data;
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const dx = x - radius;
+          const dy = y - radius;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const idx = (y * size + x) * 4;
+          if (dist <= radius) {
+            const sat = (dist / radius) * 100;
+            const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+            const hue = (angle + 360) % 360;
+            const hex = theme.hsvToHex(hue, sat, valPct);
+            const rgb = theme.hexToRgb(hex);
+            data[idx] = rgb.r;
+            data[idx + 1] = rgb.g;
+            data[idx + 2] = rgb.b;
+            data[idx + 3] = dist > radius - 1.2 ? Math.max(0, Math.round((radius - dist) * 210)) : 255;
+          } else {
+            data[idx + 3] = 0;
+          }
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+    }
+
+    function updateUiFromHex(nextHex, syncHsv = true) {
+      const norm = theme.normalizeHex(nextHex);
+      if (!norm) return;
+      currentHex = norm;
+      if (syncHsv) hsv = theme.hexToHsv(norm);
+
+      const angleRad = (hsv.h * Math.PI) / 180;
+      const dist = (hsv.s / 100) * (radius - 6);
+      const tx = 4 + radius + Math.cos(angleRad) * dist;
+      const ty = 4 + radius + Math.sin(angleRad) * dist;
+
+      thumb.style.left = `${tx}px`;
+      thumb.style.top = `${ty}px`;
+      thumb.style.backgroundColor = currentHex;
+
+      brightnessInput.value = String(Math.max(25, hsv.v));
+      brightnessLabel.textContent = `${Math.max(25, hsv.v)}%`;
+      const pureHueHex = theme.hsvToHex(hsv.h, hsv.s, 100);
+      brightnessInput.style.background = `linear-gradient(90deg, #1E293B 0%, ${pureHueHex} 100%)`;
+
+      nativeInput.value = currentHex;
+      if (document.activeElement !== hexInput) {
+        hexInput.value = currentHex;
+      }
+
+      for (const btn of presetBtns) {
+        btn.classList.toggle('is-active', btn.dataset.presetHex === currentHex);
+      }
+
+      const tokens = theme.buildThemeTokens(currentHex, currentStyle);
+      const light = tokens ? tokens.light : {
+        bgPage: '#F0F9FF',
+        borderSoft: '#BAE6FD',
+        heroBg: '#7DD3FC',
+        heroGradient: 'linear-gradient(145deg, #BAE6FD 0%, #7DD3FC 48%, #38BDF8 100%)',
+        heroInk: '#082F49',
+        accentPrimary: '#38BDF8',
+        accentInk: '#082F49'
+      };
+
+      if (styleInput) styleInput.value = currentStyle;
+      for (const btn of styleBtns) {
+        const active = btn.dataset.themeStyle === currentStyle;
+        btn.classList.toggle('is-active', active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      }
+
+      previewBox.style.backgroundColor = light.bgPage;
+      previewBox.style.borderColor = light.borderSoft;
+      previewHero.style.backgroundColor = light.heroBg;
+      previewHero.style.backgroundImage = light.heroGradient;
+      previewHero.style.color = light.heroInk;
+      previewCta.style.backgroundColor = light.accentPrimary;
+      previewCta.style.color = light.accentInk;
+
+      const ratio = theme.getContrastRatio(light.accentPrimary, light.accentInk);
+      ratioEl.textContent = `${ratio.toFixed(2)}:1`;
+      if (ratio >= 4.5) {
+        badgeEl.className = 'aui-contrast-badge is-pass';
+        badgeEl.textContent = 'WCAG AA Aman';
+      } else {
+        badgeEl.className = 'aui-contrast-badge is-warn';
+        badgeEl.textContent = 'Kontras Rendah';
+      }
+    }
+
+    drawWheel(Math.max(25, hsv.v));
+    updateUiFromHex(currentHex, false);
+
+    if (isReadOnly) return;
+
+    function pickFromPointer(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const dx = clientX - (rect.left + rect.width / 2);
+      const dy = clientY - (rect.top + rect.height / 2);
+      const maxR = rect.width / 2;
+      const clampedDist = Math.min(Math.sqrt(dx * dx + dy * dy), maxR);
+      const sat = Math.round((clampedDist / maxR) * 100);
+      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+      const hue = Math.round((angle + 360) % 360);
+      hsv = { h: hue, s: sat, v: Math.max(25, Number(brightnessInput.value)) };
+      const nextHex = theme.hsvToHex(hsv.h, hsv.s, hsv.v);
+      updateUiFromHex(nextHex, false);
+    }
+
+    let dragging = false;
+    wheelWrap.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      wheelWrap.classList.add('is-dragging');
+      wheelWrap.setPointerCapture(e.pointerId);
+      pickFromPointer(e.clientX, e.clientY);
+    });
+
+    wheelWrap.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      pickFromPointer(e.clientX, e.clientY);
+    });
+
+    const stopDrag = () => {
+      if (!dragging) return;
+      dragging = false;
+      wheelWrap.classList.remove('is-dragging');
+    };
+    wheelWrap.addEventListener('pointerup', stopDrag);
+    wheelWrap.addEventListener('pointercancel', stopDrag);
+
+    brightnessInput.addEventListener('input', () => {
+      const val = Math.max(25, Number(brightnessInput.value));
+      hsv = { ...hsv, v: val };
+      drawWheel(val);
+      updateUiFromHex(theme.hsvToHex(hsv.h, hsv.s, val), false);
+    });
+
+    nativeInput.addEventListener('input', () => {
+      const nextHex = theme.normalizeHex(nativeInput.value);
+      if (!nextHex) return;
+      const nextHsv = theme.hexToHsv(nextHex);
+      drawWheel(Math.max(25, nextHsv.v));
+      updateUiFromHex(nextHex, true);
+    });
+
+    hexInput.addEventListener('input', () => {
+      const nextHex = theme.normalizeHex(hexInput.value);
+      if (!nextHex) return;
+      const nextHsv = theme.hexToHsv(nextHex);
+      drawWheel(Math.max(25, nextHsv.v));
+      updateUiFromHex(nextHex, true);
+    });
+
+    for (const btn of presetBtns) {
+      btn.addEventListener('click', () => {
+        const nextHex = btn.dataset.presetHex;
+        const nextHsv = theme.hexToHsv(nextHex);
+        drawWheel(Math.max(25, nextHsv.v));
+        updateUiFromHex(nextHex, true);
+      });
+    }
+
+    for (const btn of styleBtns) {
+      btn.addEventListener('click', () => {
+        currentStyle = btn.dataset.themeStyle === 'flat' ? 'flat' : 'gradient';
+        updateUiFromHex(currentHex, false);
+      });
+    }
+
+    resetBtn?.addEventListener('click', () => {
+      const def = theme.DEFAULT_THEME_COLOR;
+      currentStyle = 'gradient';
+      const nextHsv = theme.hexToHsv(def);
+      drawWheel(Math.max(25, nextHsv.v));
+      updateUiFromHex(def, true);
     });
   }
 
@@ -2761,13 +3117,13 @@
             <input type="text" id="hero-cta3" value="${esc(h.secondaryContactLabel)}" ${readOnlyAttr}>
           </div>
           ${renderMediaPickerField({
-            selectId: 'hero-img',
-            label: 'Foto Utama Beranda',
-            selectedId: h.heroImageId,
-            defaultAlt: 'Foto gedung dan pelayanan Samsat Palu',
-            readOnlyAttr,
-            cropDefault: '16:10'
-          })}
+      selectId: 'hero-img',
+      label: 'Foto Utama Beranda',
+      selectedId: h.heroImageId,
+      defaultAlt: 'Foto gedung dan pelayanan Samsat Palu',
+      readOnlyAttr,
+      cropDefault: '16:10'
+    })}
         </div>
         <div class="field-group">
           <label for="hero-caption">Keterangan Foto Utama</label>
@@ -3547,15 +3903,15 @@
       isNewLocDraft = asNew;
       const item = asNew
         ? {
-            id: `lok-${Date.now().toString(36)}`,
-            name: '',
-            isPrimary: false,
-            address: '',
-            serviceScope: 'Pengesahan Pajak Tahunan',
-            hoursNote: 'Senin sampai Jumat 08.00 s.d. 15.00 WITA',
-            mapUrl: '',
-            imageId: 'media-lokasi-default'
-          }
+          id: `lok-${Date.now().toString(36)}`,
+          name: '',
+          isPrimary: false,
+          address: '',
+          serviceScope: 'Pengesahan Pajak Tahunan',
+          hoursNote: 'Senin sampai Jumat 08.00 s.d. 15.00 WITA',
+          mapUrl: '',
+          imageId: 'media-lokasi-default'
+        }
         : currentLocations[idx];
 
       const titleEl = document.getElementById('location-detail-title');
@@ -3757,13 +4113,13 @@
         </div>
 
         ${renderMediaPickerField({
-          selectId: 'prof-orgImg',
-          label: 'Gambar Bagan Struktur Organisasi',
-          selectedId: p.orgStructureImageId,
-          defaultAlt: 'Bagan struktur organisasi Samsat Palu',
-          readOnlyAttr,
-          cropDefault: 'free'
-        })}
+      selectId: 'prof-orgImg',
+      label: 'Gambar Bagan Struktur Organisasi',
+      selectedId: p.orgStructureImageId,
+      defaultAlt: 'Bagan struktur organisasi Samsat Palu',
+      readOnlyAttr,
+      cropDefault: 'free'
+    })}
 
         <div class="repeater-section">
           <div class="repeater-header">
@@ -4038,13 +4394,13 @@
       isNewRoleDraft = asNew;
       const item = asNew
         ? {
-            id: `pejabat-${Date.now().toString(36)}`,
-            role: '',
-            holder: '',
-            photoId: 'media-foto-pejabat',
-            tagline: '',
-            bio: ''
-          }
+          id: `pejabat-${Date.now().toString(36)}`,
+          role: '',
+          holder: '',
+          photoId: 'media-foto-pejabat',
+          tagline: '',
+          bio: ''
+        }
         : currentOrgRoles[idx];
 
       document.getElementById('off-role').value = item.role || '';
@@ -4333,13 +4689,13 @@
               <textarea id="ann-msg-${uid}" class="ann-msg-input" rows="3" placeholder="Tuliskan detail berita, jadwal event, atau pengumuman untuk warga..." ${readOnlyAttr}>${esc(item.message || '')}</textarea>
             </div>
             ${renderMediaPickerField({
-              selectId: `ann-img-${uid}`,
-              label: 'Foto / Banner Event Carousel',
-              selectedId: item.imageId || 'media-hero-kantor',
-              defaultAlt: `Foto ${item.title || 'berita dan pengumuman Samsat Palu'}`,
-              readOnlyAttr,
-              cropDefault: 'free'
-            })}
+        selectId: `ann-img-${uid}`,
+        label: 'Foto / Banner Event Carousel',
+        selectedId: item.imageId || 'media-hero-kantor',
+        defaultAlt: `Foto ${item.title || 'berita dan pengumuman Samsat Palu'}`,
+        readOnlyAttr,
+        cropDefault: 'free'
+      })}
             <div class="field-group">
               <label for="ann-fit-${uid}">Gaya Tampilan Foto di Carousel</label>
               <select id="ann-fit-${uid}" class="ann-fit-input" ${readOnlyAttr}>
@@ -4382,8 +4738,8 @@
 
         <div id="ann-cards-list" class="repeater-list" style="margin-bottom:1.15rem">
           ${items.length
-            ? items.map((item, idx) => annCardHtml(item, idx, false)).join('')
-            : '<div class="state-box"><p>Belum ada slide pengumuman. Klik Tambah Slide Carousel untuk membuat pengumuman atau foto event baru.</p></div>'}
+        ? items.map((item, idx) => annCardHtml(item, idx, false)).join('')
+        : '<div class="state-box"><p>Belum ada slide pengumuman. Klik Tambah Slide Carousel untuk membuat pengumuman atau foto event baru.</p></div>'}
         </div>
 
         <button type="submit" class="btn btn-primary" ${readOnlyAttr}>${lucideIcon('save', 16)} Simpan Draf Carousel Pengumuman</button>
@@ -4568,13 +4924,13 @@
             <input type="text" id="pt-desc-${uid}" class="partner-desc-input" value="${esc(pt.description || '')}" placeholder="Penjelasan peran atau layanan mitra" ${readOnlyAttr}>
           </div>
           ${renderMediaPickerField({
-            selectId: `pt-logo-${uid}`,
-            label: 'Logo Instansi Mitra',
-            selectedId: pt.logoId || 'media-logo-instansi',
-            defaultAlt: `Logo ${pt.name || 'instansi mitra Samsat Palu'}`,
-            readOnlyAttr,
-            cropDefault: 'free'
-          })}
+        selectId: `pt-logo-${uid}`,
+        label: 'Logo Instansi Mitra',
+        selectedId: pt.logoId || 'media-logo-instansi',
+        defaultAlt: `Logo ${pt.name || 'instansi mitra Samsat Palu'}`,
+        readOnlyAttr,
+        cropDefault: 'free'
+      })}
         </article>
       `;
     }
@@ -4839,8 +5195,8 @@
             <div class="asset-card-footer">
               <a href="${esc(m.url)}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm">${lucideIcon('external-link', 14)} Buka Penuh</a>
               ${m.isPlaceholder
-                ? '<span class="meta-text" style="font-size:0.78rem">Bawaan sistem</span>'
-                : `<button type="button" class="btn btn-danger btn-sm asset-delete-btn" ${isUsed || !canEditDraft() ? 'disabled title="Ganti foto ini di modul terkait terlebih dahulu sebelum menghapus"' : 'title="Hapus foto permanen"'}>${lucideIcon('trash-2', 14)} Hapus</button>`}
+            ? '<span class="meta-text" style="font-size:0.78rem">Bawaan sistem</span>'
+            : `<button type="button" class="btn btn-danger btn-sm asset-delete-btn" ${!canEditDraft() ? 'disabled title="Tidak memiliki izin hapus"' : (isUsed ? 'title="Hapus foto dan kembalikan modul terkait ke aset bawaan"' : 'title="Hapus foto permanen"')}>${lucideIcon('trash-2', 14)} Hapus</button>`}
             </div>
           </article>
         `;
@@ -4897,17 +5253,30 @@
       if (e.target.closest('.asset-delete-btn')) {
         const item = (state.adminData?.media || []).find((m) => m.id === mediaId);
         const label = item?.alt || item?.filename || 'foto ini';
+        const usedIn = usageMap[mediaId] || [];
+        const usageNotice = usedIn.length
+          ? ` Foto ini sedang dipakai di: ${usedIn.join(', ')}. Jika dihapus, bagian tersebut otomatis dikembalikan ke aset bawaan sistem.`
+          : '';
         const { confirmed } = await confirmAdminAction({
           title: 'Hapus Foto Permanen?',
-          message: `Apakah Anda yakin ingin menghapus "${label}" dari server? Tindakan ini tidak dapat dibatalkan.`,
+          message: `Apakah Anda yakin ingin menghapus "${label}" dari server?${usageNotice} Tindakan ini tidak dapat dibatalkan.`,
           confirmLabel: 'Ya, Hapus Foto',
           variant: 'danger'
         });
         if (!confirmed) return;
         try {
-          await api(`/api/admin/media/${encodeURIComponent(mediaId)}`, { method: 'DELETE' });
+          const delRes = await api(`/api/admin/media/${encodeURIComponent(mediaId)}`, { method: 'DELETE' });
           state.adminData.media = (state.adminData.media || []).filter((m) => m.id !== mediaId);
-          showFeedback(`Foto "${label}" berhasil dihapus dari server.`, 'success');
+          if (delRes.draftContent) state.adminData.draftContent = delRes.draftContent;
+          if (delRes.publishedContent) state.adminData.publishedContent = delRes.publishedContent;
+          if (typeof delRes.hasUnpublishedChanges === 'boolean') {
+            state.adminData.hasUnpublishedChanges = delRes.hasUnpublishedChanges;
+          }
+          updateDecisionBar();
+          const resetMsg = delRes.replacedCount
+            ? ` Bagian terkait otomatis dikembalikan ke aset bawaan.`
+            : '';
+          showFeedback(`Foto "${label}" berhasil dihapus dari server.${resetMsg}`, 'success');
           renderAssetsModule(readOnlyAttr);
         } catch (err) {
           showFeedback(`Gagal menghapus foto: ${err.message}`, 'error');

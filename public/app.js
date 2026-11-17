@@ -4,6 +4,35 @@
   const htmlEl = document.documentElement;
   const announcer = document.getElementById('polite-announcer');
 
+  (function initSplashScreen() {
+    const splashEl = document.getElementById('sapa-splash');
+    if (!splashEl) return;
+
+    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      splashEl.remove();
+      return;
+    }
+
+    let dismissed = false;
+    let timerId = null;
+
+    function dismissSplash() {
+      if (dismissed) return;
+      dismissed = true;
+      if (timerId) window.clearTimeout(timerId);
+      splashEl.classList.add('is-leaving');
+      const cleanup = () => {
+        if (splashEl.parentNode) splashEl.remove();
+      };
+      splashEl.addEventListener('transitionend', cleanup, { once: true });
+      window.setTimeout(cleanup, 480);
+    }
+
+    const duration = Math.max(800, Number(splashEl.getAttribute('data-duration')) || 3000);
+    timerId = window.setTimeout(dismissSplash, duration);
+  })();
+
   function announce(message) {
     if (!announcer) return;
     announcer.textContent = '';

@@ -13,6 +13,10 @@
   --hero-bg: #7DD3FC;
   --hero-ink: #082F49;
   --hero-ink-soft: #082F49;
+  --hero-gradient:
+    radial-gradient(ellipse at 86% 14%, rgba(255, 255, 255, 0.45), transparent 48%),
+    radial-gradient(ellipse at 14% 88%, rgba(14, 165, 233, 0.22), transparent 52%),
+    linear-gradient(145deg, #BAE6FD 0%, #7DD3FC 48%, #38BDF8 100%);
   --border-strong: #64748B;
   --border-soft: #BAE6FD;
   --focus-ring: #0284C7;
@@ -57,6 +61,9 @@
   --hero-bg: #0C4A6E;
   --hero-ink: #FFFFFF;
   --hero-ink-soft: #E0F2FE;
+  --hero-gradient:
+    radial-gradient(ellipse at 86% 14%, rgba(56, 189, 248, 0.2), transparent 48%),
+    linear-gradient(145deg, #082F49 0%, #0C4A6E 58%, #075985 100%);
   --border-strong: #94A3B8;
   --border-soft: #075985;
   --focus-ring: #38BDF8;
@@ -548,10 +555,7 @@ img {
   position: relative;
   overflow: hidden;
   background-color: var(--hero-bg);
-  background-image:
-    radial-gradient(ellipse at 86% 14%, rgba(255, 255, 255, 0.45), transparent 48%),
-    radial-gradient(ellipse at 14% 88%, rgba(14, 165, 233, 0.22), transparent 52%),
-    linear-gradient(145deg, #BAE6FD 0%, #7DD3FC 48%, #38BDF8 100%);
+  background-image: var(--hero-gradient);
   border-radius: var(--radius-xl);
   padding: clamp(1.5rem, 4vw, 3.25rem);
   box-shadow: var(--shadow-brand);
@@ -559,9 +563,7 @@ img {
 }
 
 [data-theme="dark"] .hero-showcase {
-  background-image:
-    radial-gradient(ellipse at 86% 14%, rgba(56, 189, 248, 0.2), transparent 48%),
-    linear-gradient(145deg, #082F49 0%, #0C4A6E 58%, #075985 100%);
+  background-image: var(--hero-gradient);
   border: 1px solid var(--border-soft);
 }
 
@@ -3214,6 +3216,90 @@ html[data-theme="dark"] .theme-icon-moon {
 
 .theme-toggler-btn:hover .aui-lucide-icon {
   transform: rotate(15deg) scale(1.08);
+}
+
+/* Splash Screen (Layar Sambutan 3 Detik) */
+.sapa-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 3vw, 2rem);
+  background: var(--bg-page);
+  background-image: radial-gradient(circle at 50% 38%, var(--bg-subtle) 0%, var(--bg-page) 70%);
+  opacity: 1;
+  transition: opacity 420ms cubic-bezier(0.215, 0.61, 0.355, 1), transform 420ms cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.sapa-splash.is-leaving {
+  opacity: 0;
+  transform: scale(1.015);
+  pointer-events: none;
+}
+
+.sapa-splash-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.25rem;
+  max-width: min(760px, 92vw);
+  width: 100%;
+  animation: sapaSplashFadeIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes sapaSplashFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.sapa-splash-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(0.85rem, 2.5vw, 1.75rem);
+  border-radius: clamp(18px, 3vw, 28px);
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-soft);
+  box-shadow: var(--shadow-brand);
+  max-width: 100%;
+}
+
+.sapa-splash-media img {
+  display: block;
+  width: clamp(260px, 58vw, 520px);
+  max-width: 82vw;
+  max-height: 58vh;
+  height: auto;
+  object-fit: contain;
+}
+
+.sapa-splash-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sapa-splash-title {
+  font-size: clamp(1.2rem, 2.6vw, 1.55rem);
+  font-weight: 800;
+  color: var(--brand-primary);
+  line-height: 1.3;
+}
+
+.sapa-splash-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
 }
 
 @media (prefers-reduced-motion: reduce) {
