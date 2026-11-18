@@ -14,7 +14,10 @@ const {
   getStalenessAlerts,
   getMediaUsageMap,
   replaceMediaReferences,
-  recordAnalyticsEvent
+  recordAnalyticsEvent,
+  addFeedbackEntry,
+  updateFeedbackEntry,
+  deleteFeedbackEntry
 } = require('./src/db');
 const { hashPassword, verifyPassword } = require('./src/seed');
 const { renderPublicPage, getWitaStatus } = require('./src/render-public');
@@ -36,6 +39,7 @@ const sessions = new Map();
 const challenges = new Map();
 const loginAttempts = new Map();
 const resetTokens = new Map();
+const feedbackAttempts = new Map();
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -294,6 +298,44 @@ async function handleRequest(req, res) {
     const payload = parseJsonBody(raw);
     const entry = recordAnalyticsEvent(payload, rawIp, req.headers['user-agent']);
     sendJson(res, 202, { recorded: true, id: entry.id });
+    return;
+  }
+
+  if (req.method === 'POST' && pathname === '/api/public/feedback') {
+    const nowMs = Date.now();
+    const rec = feedbackAttempts.get(rawIp);
+    if (rec && nowMs - rec.windowStart < 15 * 60 * 1000 && rec.count >= 10) {
+      sendJson(res, 429, { error: 'Terlalu banyak kiriman dalam waktu singkat. Mohon tunggu beberapa menit.' });
+      return;
+    }
+    const payload = parseJsonBody(await readBody(req));
+    const channel = payload.channel === 'suggestion' ? 'suggestion' : (payload.channel === 'complaint' ? 'complaint' : '');
+    const category = String(payload.category || '').trim();
+    const location = String(payload.location || '').trim();
+    const subject = String(payload.subject || '').trim();
+    const details = String(payload.details || '').trim();
+    if (!channel || !category || !location || !subject || !details || payload.consent !== true) {
+      sendJson(res, 400, { error: 'Mohon lengkapi seluruh kolom bertanda (*) dan centang pernyataan persetujuan.' });
+      return;
+    }
+    if (!rec || nowMs - rec.windowStart >= 15 * 60 * 1000) {
+      feedbackAttempts.set(rawIp, { count: 1, windowStart: nowMs });
+    } else {
+      rec.count += 1;
+    }
+    const saved = addFeedbackEntry({ channel, category, location, subject, details });
+    recordAnalyticsEvent(
+      { type: 'action_click', actionName: channel === 'suggestion' ? 'suggestion_submit' : 'complaint_submit' },
+      rawIp,
+      req.headers['user-agent']
+    );
+    sendJson(res, 201, {
+      ok: true,
+      id: saved.id,
+      ticketCode: saved.ticketCode,
+      channel: saved.channel,
+      createdAt: saved.createdAt
+    });
     return;
   }
 
@@ -769,6 +811,74 @@ async function handleRequest(req, res) {
       'Content-Disposition': 'attachment; filename="analitik-sapa-nambaso.csv"'
     });
     res.end(header + rows);
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/api/admin/feedbacks') {
+    const auth = requireAuth(req, res);
+    if (!auth) return;
+    const db = loadDatabase();
+    sendJson(res, 200, { feedbacks: db.feedbacks || [] });
+    return;
+  }
+
+  if (req.method === 'GET' && pathname === '/api/admin/feedbacks/export.csv') {
+    const auth = requireAuth(req, res);
+    if (!auth) return;
+    const db = loadDatabase();
+    const channelFilter = parsedUrl.searchParams.get('channel') || 'all';
+    const items = (db.feedbacks || []).filter((f) => channelFilter === 'all' || f.channel === channelFilter);
+    const header = '\uFEFFkode_tiket,kanal,status,waktu_masuk,kategori_atau_aspek,lokasi,topik,rincian,catatan_petugas\n';
+    const csvCell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const rows = items.map((f) => [
+      f.ticketCode,
+      f.channel === 'suggestion' ? 'Saran dan Masukan' : 'Pengaduan',
+      f.status,
+      f.createdAt,
+      f.category,
+      f.location,
+      f.subject,
+      f.details,
+      f.adminNote || ''
+    ].map(csvCell).join(',')).join('\n');
+
+    sendSecurityHeaders(res);
+    res.writeHead(200, {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="aduan-dan-saran-sapa-nambaso.csv"'
+    });
+    res.end(header + rows);
+    return;
+  }
+
+  const feedbackItemMatch = pathname.match(/^\/api\/admin\/feedbacks\/([^/]+)$/);
+  if (req.method === 'PATCH' && feedbackItemMatch) {
+    const auth = requireAuth(req, res, ['Super Admin', 'Penyunting Senior', 'Editor']);
+    if (!auth) return;
+    const id = decodeURIComponent(feedbackItemMatch[1]);
+    const body = parseJsonBody(await readBody(req));
+    const updated = updateFeedbackEntry(id, {
+      status: body.status,
+      adminNote: body.adminNote
+    });
+    if (!updated) {
+      sendJson(res, 404, { error: 'Data aduan atau saran tidak ditemukan.' });
+      return;
+    }
+    sendJson(res, 200, { ok: true, item: updated });
+    return;
+  }
+
+  if (req.method === 'DELETE' && feedbackItemMatch) {
+    const auth = requireAuth(req, res, ['Super Admin', 'Penyunting Senior', 'Editor']);
+    if (!auth) return;
+    const id = decodeURIComponent(feedbackItemMatch[1]);
+    const deleted = deleteFeedbackEntry(id);
+    if (!deleted) {
+      sendJson(res, 404, { error: 'Data aduan atau saran tidak ditemukan.' });
+      return;
+    }
+    sendJson(res, 200, { ok: true });
     return;
   }
 

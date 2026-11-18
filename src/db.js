@@ -109,6 +109,9 @@ function normalizeDatabase(db) {
       content.seo.sectionTitles.announcements = 'Berita, Event, dan Pengumuman';
     }
   }
+  if (!Array.isArray(db.feedbacks)) {
+    db.feedbacks = [];
+  }
   return db;
 }
 
@@ -301,6 +304,61 @@ function recordAnalyticsEvent(eventPayload, rawIp, userAgent) {
   return entry;
 }
 
+function addFeedbackEntry(payload) {
+  const db = loadDatabase();
+  if (!Array.isArray(db.feedbacks)) db.feedbacks = [];
+  const channel = payload.channel === 'suggestion' ? 'suggestion' : 'complaint';
+  const now = new Date().toISOString();
+  const datePart = now.slice(0, 10).replace(/-/g, '');
+  const randPart = crypto.randomBytes(2).toString('hex').toUpperCase();
+  const prefix = channel === 'suggestion' ? 'SRN' : 'ADU';
+  const entry = {
+    id: `fb-${Date.now().toString(36)}-${crypto.randomBytes(2).toString('hex')}`,
+    ticketCode: `${prefix}-${datePart}-${randPart}`,
+    channel,
+    category: String(payload.category || '').trim().slice(0, 100),
+    location: String(payload.location || '').trim().slice(0, 120),
+    subject: String(payload.subject || '').trim().slice(0, 160),
+    details: String(payload.details || '').trim().slice(0, 2000),
+    status: 'baru',
+    adminNote: '',
+    createdAt: now,
+    updatedAt: now
+  };
+  db.feedbacks.unshift(entry);
+  if (db.feedbacks.length > 5000) {
+    db.feedbacks = db.feedbacks.slice(0, 5000);
+  }
+  saveDatabase(db);
+  return entry;
+}
+
+function updateFeedbackEntry(id, updates) {
+  const db = loadDatabase();
+  if (!Array.isArray(db.feedbacks)) db.feedbacks = [];
+  const item = db.feedbacks.find((f) => f.id === id);
+  if (!item) return null;
+  if (updates.status && ['baru', 'diproses', 'selesai'].includes(updates.status)) {
+    item.status = updates.status;
+  }
+  if (typeof updates.adminNote === 'string') {
+    item.adminNote = updates.adminNote.trim().slice(0, 500);
+  }
+  item.updatedAt = new Date().toISOString();
+  saveDatabase(db);
+  return item;
+}
+
+function deleteFeedbackEntry(id) {
+  const db = loadDatabase();
+  if (!Array.isArray(db.feedbacks)) db.feedbacks = [];
+  const before = db.feedbacks.length;
+  db.feedbacks = db.feedbacks.filter((f) => f.id !== id);
+  if (db.feedbacks.length === before) return false;
+  saveDatabase(db);
+  return true;
+}
+
 module.exports = {
   loadDatabase,
   saveDatabase,
@@ -310,6 +368,9 @@ module.exports = {
   getMediaUsageMap,
   replaceMediaReferences,
   recordAnalyticsEvent,
+  addFeedbackEntry,
+  updateFeedbackEntry,
+  deleteFeedbackEntry,
   BACKUP_DIR,
   DB_PATH
 };

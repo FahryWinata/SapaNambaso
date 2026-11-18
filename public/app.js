@@ -538,59 +538,154 @@
     });
   });
 
-  // Interactable Complaint Form
-  const complaintForm = document.getElementById('complaint-form');
-  const complaintFeedback = document.getElementById('complaint-feedback');
-  if (complaintForm && complaintFeedback) {
-    complaintForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const name = (document.getElementById('complaint-name')?.value || '').trim();
-      const phone = (document.getElementById('complaint-phone')?.value || '').trim();
-      const category = (document.getElementById('complaint-category')?.value || '').trim();
-      const loc = (document.getElementById('complaint-location')?.value || '').trim();
-      const subject = (document.getElementById('complaint-subject')?.value || '').trim();
-      const details = (document.getElementById('complaint-details')?.value || '').trim();
-      const consent = document.getElementById('complaint-consent')?.checked;
+  // Channel Switcher (Kanal Pengaduan vs Kanal Saran dan Masukan) & Shared Form Handler
+  const channelButtons = Array.from(document.querySelectorAll('.channel-switch-btn[data-channel-target]'));
+  const channelPanels = {
+    complaint: document.getElementById('channel-card-complaint'),
+    suggestion: document.getElementById('channel-card-suggestion')
+  };
 
-      if (!name || !phone || !category || !loc || !subject || !details || !consent) {
-        complaintFeedback.hidden = false;
-        complaintFeedback.className = 'complaint-feedback complaint-feedback-error complaint-field-full';
-        complaintFeedback.textContent = 'Mohon lengkapi seluruh kolom bertanda (*) dan centang pernyataan kebenaran laporan.';
+  function activateChannel(targetKey) {
+    channelButtons.forEach((btn) => {
+      const isSelected = btn.getAttribute('data-channel-target') === targetKey;
+      btn.classList.toggle('is-active', isSelected);
+      btn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+    });
+    Object.entries(channelPanels).forEach(([key, panel]) => {
+      if (!panel) return;
+      panel.hidden = key !== targetKey;
+    });
+  }
+
+  channelButtons.forEach((btn, idx) => {
+    btn.addEventListener('click', () => {
+      activateChannel(btn.getAttribute('data-channel-target'));
+    });
+    btn.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const next = channelButtons[(idx + 1) % channelButtons.length];
+        next?.focus();
+        activateChannel(next?.getAttribute('data-channel-target'));
+      }
+    });
+  });
+
+  function showPublicToast({ title, message }) {
+    const stack = document.getElementById('public-toast-stack');
+    if (!stack) return;
+    const item = document.createElement('li');
+    item.className = 'public-toast-item';
+    item.setAttribute('role', 'status');
+    item.innerHTML = `
+      <span class="aui-toast-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path class="aui-check-path" d="M20 6 9 17l-5-5"/>
+        </svg>
+      </span>
+      <div class="public-toast-copy">
+        <strong class="public-toast-title"></strong>
+        <p class="public-toast-message"></p>
+      </div>
+    `;
+    item.querySelector('.public-toast-title').textContent = title;
+    item.querySelector('.public-toast-message').textContent = message;
+    stack.appendChild(item);
+
+    window.setTimeout(() => {
+      item.classList.add('is-leaving');
+      item.addEventListener('animationend', () => item.remove(), { once: true });
+      window.setTimeout(() => {
+        if (item.parentNode) item.remove();
+      }, 260);
+    }, 4200);
+  }
+
+  function bindFeedbackChannelForm({
+    formId,
+    feedbackId,
+    prefix,
+    channel,
+    dialogTitle,
+    successText,
+    consentErrorText
+  }) {
+    const formEl = document.getElementById(formId);
+    const feedbackEl = document.getElementById(feedbackId);
+    if (!formEl || !feedbackEl) return;
+
+    const submitBtn = formEl.querySelector('button[type="submit"]');
+    const defaultBtnText = submitBtn ? submitBtn.textContent : '';
+
+    formEl.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const category = (document.getElementById(`${prefix}-category`)?.value || '').trim();
+      const loc = (document.getElementById(`${prefix}-location`)?.value || '').trim();
+      const subject = (document.getElementById(`${prefix}-subject`)?.value || '').trim();
+      const details = (document.getElementById(`${prefix}-details`)?.value || '').trim();
+      const consent = Boolean(document.getElementById(`${prefix}-consent`)?.checked);
+
+      if (!category || !loc || !subject || !details || !consent) {
+        feedbackEl.hidden = false;
+        feedbackEl.className = 'complaint-feedback complaint-feedback-error complaint-field-full';
+        feedbackEl.textContent = consentErrorText;
         return;
       }
 
-      const baseWa = complaintForm.getAttribute('data-wa-url') || 'https://wa.me/6282128544041';
-      const sep = baseWa.includes('?') ? '&' : '?';
-      const msg = [
-        'Halo Petugas SAPA NAMBASO,',
-        'Saya ingin menyampaikan pengaduan/aspirasi layanan:',
-        `- Pelapor: ${name} (${phone})`,
-        `- Kategori: ${category}`,
-        `- Lokasi: ${loc}`,
-        `- Subjek: ${subject}`,
-        `- Rincian: ${details}`
-      ].join('\n');
-      const waTarget = `${baseWa}${sep}text=${encodeURIComponent(msg)}`;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Mengirim...';
+      }
 
-      trackEvent({ type: 'action_click', actionName: 'complaint_submit' });
+      try {
+        const res = await fetch('/api/public/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ channel, category, location: loc, subject, details, consent })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(data.error || 'Gagal mengirim ke server. Silakan coba lagi.');
+        }
 
-      complaintFeedback.hidden = false;
-      complaintFeedback.className = 'complaint-feedback complaint-feedback-success complaint-field-full';
-      complaintFeedback.replaceChildren();
-      const info = document.createElement('p');
-      info.textContent = `Tiket aduan atas nama ${name} siap dikirim ke WhatsApp Petugas Admin Samsat Palu.`;
-      const action = document.createElement('a');
-      action.href = waTarget;
-      action.target = '_blank';
-      action.rel = 'noopener noreferrer';
-      action.className = 'btn btn-wa-solid btn-sm';
-      action.textContent = 'Buka WhatsApp Sekarang';
-      complaintFeedback.append(info, action);
+        feedbackEl.hidden = true;
+        feedbackEl.textContent = '';
 
-      window.open(waTarget, '_blank', 'noopener,noreferrer');
-      complaintForm.reset();
+        showPublicToast({ title: dialogTitle, message: successText });
+        announce(`${dialogTitle}. ${successText}`);
+        formEl.reset();
+      } catch (err) {
+        feedbackEl.hidden = false;
+        feedbackEl.className = 'complaint-feedback complaint-feedback-error complaint-field-full';
+        feedbackEl.textContent = err.message || 'Terjadi kesalahan saat mengirim.';
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = defaultBtnText;
+        }
+      }
     });
   }
+
+  bindFeedbackChannelForm({
+    formId: 'complaint-form',
+    feedbackId: 'complaint-feedback',
+    prefix: 'complaint',
+    channel: 'complaint',
+    dialogTitle: 'Pengaduan Berhasil Terkirim',
+    successText: 'Terima kasih. Laporan pengaduan Anda telah tersimpan di sistem SAPA NAMBASO untuk ditindaklanjuti petugas.',
+    consentErrorText: 'Mohon lengkapi seluruh kolom bertanda (*) dan centang pernyataan kebenaran laporan.'
+  });
+
+  bindFeedbackChannelForm({
+    formId: 'suggestion-form',
+    feedbackId: 'suggestion-feedback',
+    prefix: 'suggestion',
+    channel: 'suggestion',
+    dialogTitle: 'Saran & Masukan Terkirim',
+    successText: 'Terima kasih. Saran dan masukan Anda telah tersimpan untuk peningkatan layanan UPTB Samsat Palu.',
+    consentErrorText: 'Mohon lengkapi seluruh kolom bertanda (*) dan centang pernyataan persetujuan.'
+  });
 
   // QR Dialog (F12)
   const qrSvgContainer = document.getElementById('qr-svg-container');

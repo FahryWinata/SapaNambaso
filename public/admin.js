@@ -25,6 +25,7 @@
 
   const MODULES = [
     { id: 'analytics', group: 'Ringkasan', label: 'Analitik Kunjungan', icon: 'bar-chart-3' },
+    { id: 'feedbacks', group: 'Ringkasan', label: 'Aduan & Saran', icon: 'message-square' },
     { id: 'identity', group: 'Konten Situs Publik', label: 'Identitas dan Logo', icon: 'shield-check' },
     { id: 'hero-tax', group: 'Konten Situs Publik', label: 'Beranda dan Cek Pajak', icon: 'car' },
     { id: 'services', group: 'Konten Situs Publik', label: 'Layanan dan Tarif PNBP', icon: 'file-text' },
@@ -39,6 +40,7 @@
 
   const LUCIDE_PATHS = {
     'bar-chart-3': '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+    'message-square': '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
     'shield-check': '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>',
     car: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
     'file-text': '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>',
@@ -1756,6 +1758,9 @@
     switch (state.activeModule) {
       case 'analytics':
         renderAnalyticsModule();
+        break;
+      case 'feedbacks':
+        renderFeedbacksModule(readOnlyAttr);
         break;
       case 'identity':
         renderIdentityModule(draft, readOnlyAttr);
@@ -5283,6 +5288,226 @@
         }
       }
     });
+  }
+
+  async function renderFeedbacksModule(readOnlyAttr) {
+    moduleContent.innerHTML = `
+      <div class="module-header">
+        <div>
+          <h1>Kotak Masuk Aduan &amp; Saran Warga</h1>
+          <p class="meta-text" style="margin:0.25rem 0 0">Kelola laporan dari Kanal Pengaduan dan masukan dari Kanal Saran secara terpisah dengan pelacakan status tindak lanjut.</p>
+        </div>
+        <a id="feedback-export-csv" href="/api/admin/feedbacks/export.csv?channel=all" class="btn btn-secondary">${lucideIcon('download', 16)} Unduh CSV</a>
+      </div>
+      <div id="feedbacks-body">
+        <div class="state-box"><p>Memuat daftar aduan dan saran...</p></div>
+      </div>
+    `;
+
+    const bodyEl = document.getElementById('feedbacks-body');
+    const exportLink = document.getElementById('feedback-export-csv');
+    let allItems = [];
+    let activeChannel = 'all';
+    let activeStatus = 'all';
+    let searchQuery = '';
+
+    try {
+      const res = await api('/api/admin/feedbacks');
+      allItems = Array.isArray(res.feedbacks) ? res.feedbacks : [];
+    } catch (err) {
+      if (bodyEl) bodyEl.innerHTML = `<div class="state-box alert-error"><p>Gagal memuat kotak masuk: ${esc(err.message)}</p></div>`;
+      return;
+    }
+
+    function formatWitaDate(iso) {
+      if (!iso) return '-';
+      const dt = new Date(iso);
+      if (Number.isNaN(dt.getTime())) return String(iso);
+      return new Intl.DateTimeFormat('id-ID', {
+        timeZone: 'Asia/Makassar',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(dt) + ' WITA';
+    }
+
+    function statusLabel(status) {
+      if (status === 'diproses') return 'Diproses';
+      if (status === 'selesai') return 'Selesai';
+      return 'Baru';
+    }
+
+    function paintInbox() {
+      if (!bodyEl) return;
+      const complaintCount = allItems.filter((f) => f.channel !== 'suggestion').length;
+      const suggestionCount = allItems.filter((f) => f.channel === 'suggestion').length;
+      const newCount = allItems.filter((f) => f.status === 'baru').length;
+
+      if (exportLink) {
+        exportLink.href = `/api/admin/feedbacks/export.csv?channel=${encodeURIComponent(activeChannel)}`;
+      }
+
+      const q = searchQuery.trim().toLowerCase();
+      const filtered = allItems.filter((item) => {
+        if (activeChannel !== 'all' && item.channel !== activeChannel) return false;
+        if (activeStatus !== 'all' && item.status !== activeStatus) return false;
+        if (q) {
+          const hay = `${item.ticketCode} ${item.subject} ${item.details} ${item.category} ${item.location} ${item.adminNote || ''}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      const listHtml = filtered.length
+        ? filtered.map((item) => {
+            const isSuggestion = item.channel === 'suggestion';
+            const channelText = isSuggestion ? 'Saran & Masukan' : 'Pengaduan';
+            return `
+              <article class="panel-card feedback-ticket-card" data-fb-id="${esc(item.id)}">
+                <div class="feedback-ticket-top">
+                  <div class="feedback-ticket-badges">
+                    <span class="feedback-ticket-code num-tabular">${esc(item.ticketCode)}</span>
+                    <span class="feedback-channel-pill ${isSuggestion ? 'is-suggestion' : 'is-complaint'}">${esc(channelText)}</span>
+                    <span class="feedback-status-pill is-${esc(item.status || 'baru')}">${esc(statusLabel(item.status))}</span>
+                  </div>
+                  <span class="meta-text num-tabular">${esc(formatWitaDate(item.createdAt))}</span>
+                </div>
+                <h3 class="feedback-ticket-subject">${esc(item.subject)}</h3>
+                <p class="feedback-ticket-meta">
+                  <strong>${isSuggestion ? 'Aspek' : 'Kategori'}:</strong> ${esc(item.category)} |
+                  <strong>Lokasi:</strong> ${esc(item.location)}
+                </p>
+                <p class="feedback-ticket-details">${esc(item.details)}</p>
+                <div class="feedback-officer-bar">
+                  <div class="feedback-officer-fields">
+                    <select class="fb-status-select" aria-label="Status tindak lanjut ${esc(item.ticketCode)}" ${readOnlyAttr}>
+                      <option value="baru" ${item.status === 'baru' ? 'selected' : ''}>Baru</option>
+                      <option value="diproses" ${item.status === 'diproses' ? 'selected' : ''}>Diproses</option>
+                      <option value="selesai" ${item.status === 'selesai' ? 'selected' : ''}>Selesai</option>
+                    </select>
+                    <input type="text" class="fb-note-input" value="${esc(item.adminNote || '')}" placeholder="Catatan tindak lanjut petugas (opsional)..." ${readOnlyAttr}>
+                  </div>
+                  <div class="feedback-officer-actions">
+                    <button type="button" class="btn btn-primary btn-sm fb-save-btn" ${readOnlyAttr}>${lucideIcon('save', 14)} Simpan Status</button>
+                    <button type="button" class="btn btn-danger btn-sm fb-delete-btn" ${readOnlyAttr}>${lucideIcon('trash-2', 14)} Hapus</button>
+                  </div>
+                </div>
+              </article>
+            `;
+          }).join('')
+        : '<div class="state-box"><p>Belum ada data aduan atau saran yang sesuai dengan filter.</p></div>';
+
+      bodyEl.innerHTML = `
+        <div class="feedback-summary-row">
+          <div class="panel-card feedback-stat-box">
+            <span class="meta-text">Kanal Pengaduan</span>
+            <strong class="num-tabular">${complaintCount}</strong>
+          </div>
+          <div class="panel-card feedback-stat-box">
+            <span class="meta-text">Kanal Saran &amp; Masukan</span>
+            <strong class="num-tabular">${suggestionCount}</strong>
+          </div>
+          <div class="panel-card feedback-stat-box">
+            <span class="meta-text">Berstatus Baru</span>
+            <strong class="num-tabular">${newCount}</strong>
+          </div>
+        </div>
+
+        <div class="asset-toolbar panel-card" style="margin-bottom:1rem">
+          <div class="asset-filter-tabs" role="group" aria-label="Filter kanal">
+            <button type="button" class="asset-filter-btn fb-channel-btn ${activeChannel === 'all' ? 'is-active' : ''}" data-fb-channel="all">Semua (${allItems.length})</button>
+            <button type="button" class="asset-filter-btn fb-channel-btn ${activeChannel === 'complaint' ? 'is-active' : ''}" data-fb-channel="complaint">Pengaduan (${complaintCount})</button>
+            <button type="button" class="asset-filter-btn fb-channel-btn ${activeChannel === 'suggestion' ? 'is-active' : ''}" data-fb-channel="suggestion">Saran &amp; Masukan (${suggestionCount})</button>
+          </div>
+          <div class="feedback-toolbar-right">
+            <select id="fb-status-filter" aria-label="Filter status">
+              <option value="all" ${activeStatus === 'all' ? 'selected' : ''}>Semua Status</option>
+              <option value="baru" ${activeStatus === 'baru' ? 'selected' : ''}>Baru</option>
+              <option value="diproses" ${activeStatus === 'diproses' ? 'selected' : ''}>Diproses</option>
+              <option value="selesai" ${activeStatus === 'selesai' ? 'selected' : ''}>Selesai</option>
+            </select>
+            <div class="asset-search-wrap">
+              ${lucideIcon('search', 16)}
+              <input type="search" id="fb-search-input" value="${esc(searchQuery)}" placeholder="Cari kode tiket, topik, lokasi...">
+            </div>
+          </div>
+        </div>
+
+        <div id="feedback-inbox-list" class="feedback-inbox-list">${listHtml}</div>
+      `;
+
+      bodyEl.querySelectorAll('.fb-channel-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          activeChannel = btn.getAttribute('data-fb-channel') || 'all';
+          paintInbox();
+        });
+      });
+
+      document.getElementById('fb-status-filter')?.addEventListener('change', (e) => {
+        activeStatus = e.target.value || 'all';
+        paintInbox();
+      });
+
+      document.getElementById('fb-search-input')?.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        paintInbox();
+        const inp = document.getElementById('fb-search-input');
+        if (inp) {
+          inp.focus();
+          inp.setSelectionRange(inp.value.length, inp.value.length);
+        }
+      });
+
+      document.getElementById('feedback-inbox-list')?.addEventListener('click', async (e) => {
+        const card = e.target.closest('.feedback-ticket-card');
+        if (!card) return;
+        const fbId = card.getAttribute('data-fb-id');
+
+        if (e.target.closest('.fb-save-btn')) {
+          const status = card.querySelector('.fb-status-select')?.value || 'baru';
+          const adminNote = card.querySelector('.fb-note-input')?.value.trim() || '';
+          try {
+            const updated = await api(`/api/admin/feedbacks/${encodeURIComponent(fbId)}`, {
+              method: 'PATCH',
+              body: JSON.stringify({ status, adminNote })
+            });
+            const target = allItems.find((x) => x.id === fbId);
+            if (target && updated.item) {
+              target.status = updated.item.status;
+              target.adminNote = updated.item.adminNote;
+            }
+            showFeedback(`Status tiket ${target?.ticketCode || ''} berhasil diperbarui.`, 'success');
+            paintInbox();
+          } catch (err) {
+            showFeedback(`Gagal memperbarui status: ${err.message}`, 'error');
+          }
+          return;
+        }
+
+        if (e.target.closest('.fb-delete-btn')) {
+          const target = allItems.find((x) => x.id === fbId);
+          const { confirmed } = await confirmAdminAction({
+            title: 'Hapus Tiket Aduan / Saran?',
+            message: `Apakah Anda yakin ingin menghapus tiket "${target?.ticketCode || ''}"?`,
+            confirmLabel: 'Ya, Hapus',
+            variant: 'danger'
+          });
+          if (!confirmed) return;
+          try {
+            await api(`/api/admin/feedbacks/${encodeURIComponent(fbId)}`, { method: 'DELETE' });
+            allItems = allItems.filter((x) => x.id !== fbId);
+            showFeedback(`Tiket ${target?.ticketCode || ''} berhasil dihapus.`, 'success');
+            paintInbox();
+          } catch (err) {
+            showFeedback(`Gagal menghapus tiket: ${err.message}`, 'error');
+          }
+        }
+      });
+    }
+
+    paintInbox();
   }
 
   enhanceAdminControls(document);

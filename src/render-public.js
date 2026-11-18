@@ -595,7 +595,8 @@ function renderPublicPage(db, options = {}) {
               <div class="hero-cta-group">
                 <a href="${escapeHtml(taxUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-hero-primary btn-lg" data-track-action="cek_pajak">${escapeHtml(content.hero?.primaryCtaLabel || taxLabel)}</a>
                 <a href="#lokasi" class="btn btn-hero-secondary btn-lg">${escapeHtml(content.hero?.secondaryLocationLabel || 'Lokasi Kantor')}</a>
-                <a href="#kontak" class="btn btn-hero-ghost btn-lg">${escapeHtml(content.hero?.secondaryContactLabel || 'Hubungi Kami')}</a>
+                <a href="#kontak" class="btn btn-hero-secondary btn-lg">${escapeHtml(content.hero?.secondaryContactLabel || 'Hubungi Kami')}</a>
+                <a href="#pengaduan" class="btn btn-hero-secondary btn-lg">Pengaduan &amp; Saran</a>
               </div>
             </div>
             <div class="hero-dashboard-card">
@@ -853,30 +854,30 @@ function renderPublicPage(db, options = {}) {
 
     <section id="pengaduan" class="complaint-section animate-ui-reveal" aria-labelledby="complaint-heading">
       <div class="container">
-        <div class="complaint-card">
+        <div class="channel-switcher" role="tablist" aria-label="Pilih kanal aspirasi masyarakat">
+          <button type="button" role="tab" id="tab-btn-complaint" class="channel-switch-btn is-active" data-channel-target="complaint" aria-selected="true" aria-controls="channel-card-complaint">
+            <svg class="aui-lucide-icon" data-aui-icon="message-square" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Kanal Pengaduan</span>
+          </button>
+          <button type="button" role="tab" id="tab-btn-suggestion" class="channel-switch-btn" data-channel-target="suggestion" aria-selected="false" aria-controls="channel-card-suggestion">
+            <svg class="aui-lucide-icon" data-aui-icon="sparkles" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+            <span>Kanal Saran dan Masukan</span>
+          </button>
+        </div>
+
+        <div id="channel-card-complaint" class="complaint-card channel-card-panel" role="tabpanel" aria-labelledby="tab-btn-complaint">
           <div class="complaint-header">
             <div class="complaint-badge-row">
               <span class="complaint-icon-badge" aria-hidden="true">
                 <svg class="aui-lucide-icon" data-aui-icon="message-square" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
               </span>
-              <span class="complaint-badge-title">ASPIRASI &amp; PENGADUAN WARGA</span>
+              <span class="complaint-badge-title">KANAL PENGADUAN PELAYANAN</span>
             </div>
             <h2 id="complaint-heading" class="complaint-main-title">${escapeHtml(content.contacts?.complaintTitle || 'Formulir Pengaduan Pelayanan')}</h2>
-            <p class="complaint-intro-text">${escapeHtml(content.contacts?.complaintText || 'Laporkan kendala antrean, pungutan tidak resmi, atau berikan usulan perbaikan loket Samsat Palu secara langsung. Sesuai prinsip perlindungan privasi PRD, formulir ini tidak meminta NIK atau data pribadi rahasia.')}</p>
+            <p class="complaint-intro-text">${escapeHtml(content.contacts?.complaintText || 'Laporkan kendala antrean, ketidaksesuaian pelayanan, atau pungutan tidak resmi pada loket Samsat Palu. Sesuai prinsip perlindungan privasi, formulir ini tidak meminta NIK atau data pribadi rahasia.')}</p>
           </div>
 
           <form id="complaint-form" class="complaint-form-layout" data-wa-url="${escapeHtml(safeUrl(content.contacts?.whatsappUrl))}">
-            <div class="form-row-2col">
-              <div class="form-group">
-                <label for="complaint-name">Nama / Inisial Pelapor <span class="required-star">*</span></label>
-                <input id="complaint-name" name="name" type="text" required placeholder="Contoh: Ahmad / Inisial A.R.">
-              </div>
-              <div class="form-group">
-                <label for="complaint-phone">Nomor WhatsApp Aktif <span class="required-star">*</span></label>
-                <input id="complaint-phone" name="phone" type="tel" required placeholder="08xxxxxxxxxx">
-              </div>
-            </div>
-
             <div class="form-row-2col">
               <div class="form-group">
                 <label for="complaint-category">Kategori Layanan <span class="required-star">*</span></label>
@@ -899,7 +900,7 @@ function renderPublicPage(db, options = {}) {
             </div>
 
             <div class="form-group">
-              <label for="complaint-subject">Subjek Aduan / Usulan <span class="required-star">*</span></label>
+              <label for="complaint-subject">Subjek Pengaduan <span class="required-star">*</span></label>
               <input id="complaint-subject" name="subject" type="text" required placeholder="Contoh: Waktu tunggu cetak SKPD agak lama di loket 3">
             </div>
 
@@ -909,17 +910,86 @@ function renderPublicPage(db, options = {}) {
             </div>
 
             <div class="form-group form-consent-group">
-              <label class="complaint-checkbox-label">
-                <input type="checkbox" id="complaint-consent" required>
-                <span>Saya menyatakan bahwa laporan ini dibuat dengan data yang sebenarnya tanpa muatan SARA, ujaran kebencian, atau hoaks demi evaluasi UPTB Samsat Palu.</span>
+              <label class="complaint-checkbox-label aui-checkbox-label">
+                <input type="checkbox" id="complaint-consent" class="aui-checkbox-input" required>
+                <span class="aui-checkbox-box" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <path class="aui-checkbox-check" d="M20 6 9 17l-5-5"/>
+                  </svg>
+                </span>
+                <span>Saya menyatakan bahwa laporan pengaduan ini dibuat dengan data yang sebenarnya tanpa muatan SARA, ujaran kebencian, atau hoaks demi evaluasi UPTB Samsat Palu.</span>
               </label>
             </div>
 
             <div class="complaint-footer-row">
-              <span class="complaint-footer-note">Respon tiket melalui WhatsApp Petugas Admin</span>
+              <span class="complaint-footer-note">Laporan tersimpan langsung di sistem dan ditindaklanjuti petugas</span>
               <button type="submit" class="btn btn-primary btn-submit-aduan">Kirimkan Aduan &blacktriangleright;</button>
             </div>
             <div id="complaint-feedback" class="complaint-feedback-box" hidden aria-live="polite"></div>
+          </form>
+        </div>
+
+        <div id="channel-card-suggestion" class="complaint-card channel-card-panel" role="tabpanel" aria-labelledby="tab-btn-suggestion" hidden>
+          <div class="complaint-header">
+            <div class="complaint-badge-row">
+              <span class="complaint-icon-badge" aria-hidden="true">
+                <svg class="aui-lucide-icon" data-aui-icon="sparkles" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+              </span>
+              <span class="complaint-badge-title">KANAL SARAN &amp; MASUKAN WARGA</span>
+            </div>
+            <h2 id="suggestion-heading" class="complaint-main-title">${escapeHtml(content.contacts?.suggestionTitle || 'Formulir Saran dan Masukan Pelayanan')}</h2>
+            <p class="complaint-intro-text">${escapeHtml(content.contacts?.suggestionText || 'Sampaikan ide perbaikan, apresiasi petugas, atau masukan peningkatan kualitas layanan Samsat Palu. Masukan Anda sangat berharga bagi inovasi pelayanan kami.')}</p>
+          </div>
+
+          <form id="suggestion-form" class="complaint-form-layout" data-wa-url="${escapeHtml(safeUrl(content.contacts?.whatsappUrl))}">
+            <div class="form-row-2col">
+              <div class="form-group">
+                <label for="suggestion-category">Aspek Layanan <span class="required-star">*</span></label>
+                <select id="suggestion-category" name="category" required>
+                  <option value="">Pilih Aspek Layanan...</option>
+                  <option value="Kenyamanan Ruang Tunggu">Kenyamanan Ruang Tunggu</option>
+                  <option value="Kecepatan &amp; Alur Loket">Kecepatan &amp; Alur Loket</option>
+                  <option value="Informasi &amp; Layanan Digital">Informasi &amp; Layanan Digital</option>
+                  <option value="Sikap &amp; Keramahan Petugas">Sikap &amp; Keramahan Petugas</option>
+                  <option value="Fasilitas Parkir &amp; Umum">Fasilitas Parkir &amp; Umum</option>
+                  <option value="Lainnya">Lainnya</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="suggestion-location">Lokasi Pelayanan Terkait <span class="required-star">*</span></label>
+                <select id="suggestion-location" name="location" required>
+                  ${sortedLocations.map((loc) => `<option value="${escapeHtml(loc.name)}">${escapeHtml(loc.name)}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="suggestion-subject">Topik Saran / Masukan <span class="required-star">*</span></label>
+              <input id="suggestion-subject" name="subject" type="text" required placeholder="Contoh: Penambahan petunjuk arah loket cek fisik">
+            </div>
+
+            <div class="form-group">
+              <label for="suggestion-details">Isi Saran &amp; Masukan <span class="required-star">*</span></label>
+              <textarea id="suggestion-details" name="details" rows="4" required placeholder="Tuliskan usulan perbaikan, ide inovasi, atau masukan konstruktif untuk meningkatkan kualitas layanan Samsat Palu..."></textarea>
+            </div>
+
+            <div class="form-group form-consent-group">
+              <label class="complaint-checkbox-label aui-checkbox-label">
+                <input type="checkbox" id="suggestion-consent" class="aui-checkbox-input" required>
+                <span class="aui-checkbox-box" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <path class="aui-checkbox-check" d="M20 6 9 17l-5-5"/>
+                  </svg>
+                </span>
+                <span>Saya menyampaikan saran dan masukan ini secara konstruktif demi peningkatan mutu pelayanan UPTB Samsat Palu.</span>
+              </label>
+            </div>
+
+            <div class="complaint-footer-row">
+              <span class="complaint-footer-note">Saran tersimpan langsung di sistem untuk evaluasi layanan</span>
+              <button type="submit" class="btn btn-primary btn-submit-aduan">Kirimkan Saran &amp; Masukan &blacktriangleright;</button>
+            </div>
+            <div id="suggestion-feedback" class="complaint-feedback-box" hidden aria-live="polite"></div>
           </form>
         </div>
       </div>
@@ -1114,6 +1184,8 @@ function renderPublicPage(db, options = {}) {
       </ul>
     </div>
   </dialog>
+
+  <ol id="public-toast-stack" class="public-toast-stack" aria-live="polite" aria-label="Notifikasi status pengiriman"></ol>
 
   <div id="polite-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
   <script src="/app.js" defer></script>
