@@ -542,7 +542,7 @@ async function handleRequest(req, res) {
     const section = decodeURIComponent(pathname.slice('/api/admin/draft/'.length));
     const allowedSections = [
       'identity', 'hero', 'taxCheck', 'profile', 'services',
-      'hours', 'locations', 'contacts', 'announcements', 'partners', 'faq', 'seo'
+      'hours', 'samsatKeliling', 'locations', 'contacts', 'announcements', 'partners', 'faq', 'seo'
     ];
     if (!allowedSections.includes(section)) {
       sendJson(res, 400, { error: 'Bagian konten tidak dikenal.' });

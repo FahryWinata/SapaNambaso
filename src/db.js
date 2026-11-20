@@ -6,6 +6,8 @@ const crypto = require('node:crypto');
 const {
   createInitialDatabase,
   createDefaultAnnouncements,
+  createDefaultSamsatKeliling,
+  createInitialMedia,
   createInitialUsers,
   buildGoogleMapsDirectionsUrl
 } = require('./seed');
@@ -102,11 +104,25 @@ function normalizeDatabase(db) {
       }));
     }
     content.announcements = normalizeAnnouncements(content.announcements);
+    if (!Array.isArray(content.samsatKeliling)) {
+      content.samsatKeliling = createDefaultSamsatKeliling();
+    }
     if (content.contacts && 'extraChannels' in content.contacts) {
       delete content.contacts.extraChannels;
     }
     if (content.seo && content.seo.sectionTitles && !content.seo.sectionTitles.announcements) {
       content.seo.sectionTitles.announcements = 'Berita, Event, dan Pengumuman';
+    }
+    if (content.seo && content.seo.sectionTitles && !content.seo.sectionTitles.samsatKeliling) {
+      content.seo.sectionTitles.samsatKeliling = 'Jadwal Samsat Keliling';
+    }
+  }
+  if (Array.isArray(db.media)) {
+    const existingIds = new Set(db.media.map((m) => m.id));
+    for (const seedMedia of createInitialMedia()) {
+      if (!existingIds.has(seedMedia.id)) {
+        db.media.push(seedMedia);
+      }
     }
   }
   if (!Array.isArray(db.feedbacks)) {

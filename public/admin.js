@@ -30,6 +30,7 @@
     { id: 'hero-tax', group: 'Konten Situs Publik', label: 'Beranda dan Cek Pajak', icon: 'car' },
     { id: 'services', group: 'Konten Situs Publik', label: 'Layanan dan Tarif PNBP', icon: 'file-text' },
     { id: 'hours', group: 'Konten Situs Publik', label: 'Jam Operasional WITA', icon: 'clock' },
+    { id: 'samsat-keliling', group: 'Konten Situs Publik', label: 'Jadwal Samsat Keliling', icon: 'car' },
     { id: 'locations', group: 'Konten Situs Publik', label: 'Lokasi Kantor dan Gerai', icon: 'map-pin' },
     { id: 'profile', group: 'Konten Situs Publik', label: 'Profil dan Struktur', icon: 'building-2' },
     { id: 'contacts', group: 'Konten Situs Publik', label: 'Kontak dan Pengaduan', icon: 'phone' },
@@ -1773,6 +1774,9 @@
         break;
       case 'hours':
         renderHoursModule(draft, readOnlyAttr);
+        break;
+      case 'samsat-keliling':
+        renderSamsatKelilingModule(draft, readOnlyAttr);
         break;
       case 'locations':
         renderLocationsModule(draft, readOnlyAttr);
@@ -5508,6 +5512,147 @@
     }
 
     paintInbox();
+  }
+
+  function renderSamsatKelilingModule(draft, readOnlyAttr) {
+    const items = Array.isArray(draft.samsatKeliling) ? draft.samsatKeliling : [];
+    let skSeq = 0;
+
+    function skCardHtml(item = {}, idx = 0, isOpen = false) {
+      skSeq += 1;
+      const uid = `sk-${skSeq}`;
+      const isEnabled = item.enabled !== false;
+      const dayLabel = item.dayLabel || 'Jadwal Baru';
+      const timeRange = item.timeRange || '08.30 s.d. 12.00 WITA';
+      return `
+        <details class="admin-svc-details sk-item-card" data-sk-id="${esc(item.id || uid)}" ${isOpen ? 'open' : ''}>
+          <summary class="admin-svc-summary">
+            <button type="button" class="aui-drag-handle" aria-label="Seret untuk mengubah urutan jadwal ${esc(dayLabel)}" ${!canEditDraft() ? 'disabled' : ''}>${lucideIcon('grip-vertical', 16)}</button>
+            <span class="admin-svc-num num-tabular">${String(idx + 1).padStart(2, '0')}</span>
+            <span class="admin-svc-title-group">
+              <strong class="admin-svc-title-text">${esc(dayLabel)}</strong>
+              <span class="admin-svc-meta num-tabular">${esc(timeRange)} | ${esc(item.location || 'Lokasi belum diisi')}</span>
+            </span>
+            <span class="admin-svc-actions-bar">
+              <span class="admin-svc-status-badge ${isEnabled ? 'is-active' : 'is-inactive'}">${isEnabled ? 'Aktif' : 'Nonaktif'}</span>
+              <button type="button" class="btn btn-danger btn-sm sk-remove-btn" aria-label="Hapus jadwal ${esc(dayLabel)}" ${readOnlyAttr}>${lucideIcon('trash-2', 14)}</button>
+              <span class="admin-svc-chevron" aria-hidden="true">${lucideIcon('chevron-down', 18)}</span>
+            </span>
+          </summary>
+          <div class="admin-svc-body">
+            <div class="grid-2">
+              <div class="field-group">
+                <label for="sk-enabled-${uid}">Status Tampil</label>
+                <select id="sk-enabled-${uid}" class="sk-enabled-input" ${readOnlyAttr}>
+                  <option value="true" ${isEnabled ? 'selected' : ''}>Aktif (Tampil di Situs Publik)</option>
+                  <option value="false" ${!isEnabled ? 'selected' : ''}>Nonaktif (Sembunyikan)</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="sk-day-${uid}">Hari / Periode</label>
+                <input type="text" id="sk-day-${uid}" class="sk-day-input" value="${esc(item.dayLabel || '')}" placeholder="Contoh: Senin s.d. Kamis" ${readOnlyAttr} required>
+              </div>
+              <div class="field-group">
+                <label for="sk-time-${uid}">Jam Operasional (WITA)</label>
+                <input type="text" id="sk-time-${uid}" class="sk-time-input" value="${esc(item.timeRange || '')}" placeholder="Contoh: 08.30 s.d. 13.00 WITA" ${readOnlyAttr} required>
+              </div>
+              <div class="field-group">
+                <label for="sk-scope-${uid}">Jenis Layanan</label>
+                <input type="text" id="sk-scope-${uid}" class="sk-scope-input" value="${esc(item.serviceScope || '')}" placeholder="Contoh: Pengesahan Pajak Tahunan" ${readOnlyAttr}>
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="sk-loc-${uid}">Lokasi / Titik Mangkal</label>
+              <input type="text" id="sk-loc-${uid}" class="sk-loc-input" value="${esc(item.location || '')}" placeholder="Contoh: Area Taman GOR / Jl. Moh. Hatta, Kota Palu" ${readOnlyAttr} required>
+            </div>
+            <div class="field-group" style="margin-bottom:0">
+              <label for="sk-note-${uid}">Catatan Tambahan (Opsional)</label>
+              <input type="text" id="sk-note-${uid}" class="sk-note-input" value="${esc(item.note || '')}" placeholder="Contoh: Siapkan STNK asli dan KTP pemilik kendaraan." ${readOnlyAttr}>
+            </div>
+          </div>
+        </details>
+      `;
+    }
+
+    moduleContent.innerHTML = `
+      <div class="module-header">
+        <div>
+          <h1>Jadwal Samsat Keliling (Rutin)</h1>
+          <p class="meta-text" style="margin:0.25rem 0 0">Atur jadwal rutin layanan mobil Samsat Keliling secara terpisah dari event/pengumuman.</p>
+        </div>
+        <button type="button" id="add-sk-btn" class="btn btn-accent" ${readOnlyAttr}>${lucideIcon('plus', 16)} Tambah Jadwal</button>
+      </div>
+      <form id="sk-form" class="panel-card">
+        <div id="sk-cards-list" class="repeater-list" style="margin-bottom:1.15rem">
+          ${items.length
+        ? items.map((item, idx) => skCardHtml(item, idx, false)).join('')
+        : '<div class="state-box"><p>Belum ada jadwal Samsat Keliling. Klik Tambah Jadwal untuk menambahkan.</p></div>'}
+        </div>
+        <button type="submit" class="btn btn-primary" ${readOnlyAttr}>${lucideIcon('save', 16)} Simpan Draf Jadwal Samsat Keliling</button>
+      </form>
+    `;
+
+    const listEl = document.getElementById('sk-cards-list');
+    function refreshSkBadges() {
+      const cards = Array.from(listEl.querySelectorAll('.sk-item-card'));
+      cards.forEach((card, i) => {
+        const num = card.querySelector('.admin-svc-num');
+        if (num) num.textContent = String(i + 1).padStart(2, '0');
+      });
+      if (!cards.length && !listEl.querySelector('.state-box')) {
+        listEl.innerHTML = '<div class="state-box"><p>Belum ada jadwal Samsat Keliling. Klik Tambah Jadwal untuk menambahkan.</p></div>';
+      }
+    }
+
+    bindSmoothAccordionDetails(moduleContent);
+    bindAnimateUiSortable(listEl, {
+      itemSelector: 'details.sk-item-card',
+      onReorder: refreshSkBadges
+    });
+
+    document.getElementById('add-sk-btn')?.addEventListener('click', () => {
+      const emptyBox = listEl.querySelector('.state-box');
+      if (emptyBox) emptyBox.remove();
+      const wrap = document.createElement('div');
+      wrap.innerHTML = skCardHtml({
+        id: `sk-${Date.now().toString(36)}`,
+        enabled: true,
+        dayLabel: '',
+        timeRange: '08.30 s.d. 13.00 WITA',
+        location: '',
+        serviceScope: 'Pengesahan Pajak Tahunan',
+        note: ''
+      }, listEl.querySelectorAll('.sk-item-card').length, true).trim();
+      const card = wrap.firstElementChild;
+      listEl.appendChild(card);
+      enhanceAdminControls(card);
+      bindSmoothAccordionDetails(listEl);
+      refreshSkBadges();
+      card.querySelector('.sk-day-input')?.focus();
+    });
+
+    listEl.addEventListener('click', (e) => {
+      const card = e.target.closest('.sk-item-card');
+      if (!card) return;
+      if (e.target.closest('.sk-remove-btn')) {
+        card.remove();
+        refreshSkBadges();
+      }
+    });
+
+    document.getElementById('sk-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const updated = Array.from(listEl.querySelectorAll('.sk-item-card')).map((card, i) => ({
+        id: card.getAttribute('data-sk-id') || `sk-${i + 1}`,
+        enabled: card.querySelector('.sk-enabled-input')?.value === 'true',
+        dayLabel: card.querySelector('.sk-day-input')?.value.trim() || '',
+        timeRange: card.querySelector('.sk-time-input')?.value.trim() || '',
+        location: card.querySelector('.sk-loc-input')?.value.trim() || '',
+        serviceScope: card.querySelector('.sk-scope-input')?.value.trim() || '',
+        note: card.querySelector('.sk-note-input')?.value.trim() || ''
+      }));
+      await saveDraftSection('samsatKeliling', updated);
+    });
   }
 
   enhanceAdminControls(document);

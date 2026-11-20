@@ -691,6 +691,36 @@ function renderPublicPage(db, options = {}) {
       </div>
     </section>
 
+    ${(() => {
+      const kelilingItems = (Array.isArray(content.samsatKeliling) ? content.samsatKeliling : []).filter((k) => k && k.enabled !== false);
+      if (!kelilingItems.length) return '';
+      const skTitle = content.seo?.sectionTitles?.samsatKeliling || 'Jadwal Samsat Keliling';
+      return `
+    <section id="samsat-keliling" class="samsat-keliling-section animate-ui-reveal" aria-labelledby="heading-samsat-keliling">
+      <div class="container">
+        <div class="ledger-header">
+          <div class="ledger-title-group">
+            <h2 id="heading-samsat-keliling">${escapeHtml(skTitle)}</h2>
+          </div>
+        </div>
+        <p class="section-intro">Layanan mobil Samsat Keliling beroperasi secara rutin untuk memudahkan pengesahan pajak kendaraan tahunan di titik keramaian Kota Palu.</p>
+        <div class="keliling-grid">
+          ${kelilingItems.map((item) => `
+            <article class="keliling-card">
+              <div class="keliling-card-top">
+                <span class="keliling-day-pill">${escapeHtml(item.dayLabel || 'Jadwal Rutin')}</span>
+                <span class="keliling-time num-tabular">${escapeHtml(item.timeRange || '')}</span>
+              </div>
+              <h3 class="keliling-location">${escapeHtml(item.location || '')}</h3>
+              ${item.serviceScope ? `<p class="keliling-scope">${escapeHtml(item.serviceScope)}</p>` : ''}
+              ${item.note ? `<p class="keliling-note">${escapeHtml(item.note)}</p>` : ''}
+            </article>
+          `).join('')}
+        </div>
+      </div>
+    </section>`;
+    })()}
+
     <section id="layanan" class="services-section animate-ui-reveal" aria-labelledby="heading-layanan">
       <div class="container">
         <div class="ledger-header">
@@ -700,22 +730,8 @@ function renderPublicPage(db, options = {}) {
         </div>
         <p class="section-intro">Ketuk atau pilih nama layanan di bawah untuk membuka rincian tarif PNBP dan dokumen persyaratan yang perlu disiapkan sebelum ke loket.</p>
 
-        <div class="service-search-bar">
-          <label for="cari-layanan" class="search-label">Cari layanan atau dokumen persyaratan</label>
-          <div class="search-input-row">
-            <input type="search" id="cari-layanan" placeholder="Contoh: STNK, BPKB, mutasi, atau balik nama" autocomplete="off">
-            <button type="button" id="reset-cari-layanan" class="btn btn-secondary" hidden>Hapus Pencarian</button>
-          </div>
-        </div>
-
         <div id="services-list" class="services-ledger">
           ${servicesHtml}
-        </div>
-
-        <div id="services-empty" class="state-box state-empty" hidden>
-          <h3>Layanan tidak ditemukan</h3>
-          <p id="services-empty-msg">Tidak ada layanan yang cocok dengan kata kunci pencarian Anda.</p>
-          <button type="button" id="empty-reset-search" class="btn btn-secondary">Tampilkan Semua Layanan</button>
         </div>
       </div>
     </section>
@@ -824,29 +840,19 @@ function renderPublicPage(db, options = {}) {
               <span><strong>TikTok:</strong> ${escapeHtml(content.contacts?.tiktokHandle || content.contacts?.instagramHandle || '')}</span>
             </div>
             <div class="contact-social-pills">
-              <a href="${escapeHtml(safeUrl(content.contacts?.instagramUrl))}" target="_blank" rel="noopener noreferrer" class="social-pill-btn" data-track-action="social_instagram" aria-label="Instagram Resmi">
-                <span>Instagram &nearr;</span>
+              <a href="${escapeHtml(safeUrl(content.contacts?.instagramUrl))}" target="_blank" rel="noopener noreferrer" class="social-pill-btn social-ig" data-track-action="social_instagram" aria-label="Instagram Resmi">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                <span>Instagram</span>
               </a>
-              <a href="${escapeHtml(safeUrl(content.contacts?.facebookUrl))}" target="_blank" rel="noopener noreferrer" class="social-pill-btn" data-track-action="social_facebook" aria-label="Facebook Resmi">
-                <span>Facebook &nearr;</span>
+              <a href="${escapeHtml(safeUrl(content.contacts?.facebookUrl))}" target="_blank" rel="noopener noreferrer" class="social-pill-btn social-fb" data-track-action="social_facebook" aria-label="Facebook Resmi">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M14 13.5h2.5l1-4H14v-2c0-1.03 0-2 2-2h1.5V2.14c-.326-.043-1.557-.14-2.857-.14C11.928 2 10 3.657 10 6.7v2.8H7v4h3V22h4v-8.5z"/></svg>
+                <span>Facebook</span>
               </a>
-              <a href="${escapeHtml(safeUrl(content.contacts?.tiktokUrl))}" target="_blank" rel="noopener noreferrer" class="social-pill-btn" data-track-action="social_tiktok" aria-label="TikTok Resmi">
-                <span>TikTok &nearr;</span>
+              <a href="${escapeHtml(safeUrl(content.contacts?.tiktokUrl))}" target="_blank" rel="noopener noreferrer" class="social-pill-btn social-tt" data-track-action="social_tiktok" aria-label="TikTok Resmi">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.87a8.16 8.16 0 0 0 4.76 1.52v-3.4a4.85 4.85 0 0 1-1-.3z"/></svg>
+                <span>TikTok</span>
               </a>
             </div>
-          </article>
-
-          <article class="contact-compact-card">
-            <div class="contact-card-top">
-              <span class="contact-icon-box" aria-hidden="true">
-                <svg class="aui-lucide-icon" data-aui-icon="building-2" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
-              </span>
-              <span class="contact-pill">Kantor Induk</span>
-            </div>
-            <h3>Kantor Pusat Palu</h3>
-            <p class="contact-card-desc">Loket utama pengurusan 5 tahunan, cek fisik, mutasi luar kota, dan BBNKB.</p>
-            <p class="contact-card-address">${escapeHtml(primaryLocation ? primaryLocation.address : 'Jl. Kartini, Lolu Utara, Kec. Palu Selatan, Kota Palu, Sulawesi Tengah')}</p>
-            <a href="${escapeHtml(safeUrl(primaryLocation?.mapUrl || buildGoogleMapsDirectionsUrl(primaryLocation?.name, primaryLocation?.address)))}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary contact-card-cta" data-track-action="directions" data-location-id="${escapeHtml(primaryLocation?.id || 'loc-induk')}" data-location-name="${escapeHtml(primaryLocation?.name || 'Kantor Induk')}">Petunjuk Arah Maps &blacktriangleright;</a>
           </article>
         </div>
       </div>
@@ -1024,9 +1030,14 @@ function renderPublicPage(db, options = {}) {
         </div>
 
         <div class="partners-tripartite-grid">
+          ${(() => {
+            const bapendaLogo = getMediaById(mediaList, 'media-partner-bapenda', { url: '/assets/partners/bapenda-sulteng.png', alt: 'Logo Pemerintah Provinsi Sulawesi Tengah dan Bapenda Sulteng' });
+            const ditlantasLogo = getMediaById(mediaList, 'media-partner-ditlantas', { url: '/assets/partners/ditlantas.png', alt: 'Logo Ditlantas Korlantas Polri' });
+            const jrLogo = getMediaById(mediaList, 'media-partner-jasaraharja', { url: '/assets/partners/jasa-raharja.png', alt: 'Logo PT Jasa Raharja' });
+            return `
           <article class="partner-tripartite-card">
-            <div class="partner-card-icon-box" aria-hidden="true">
-              <svg class="aui-lucide-icon" data-aui-icon="landmark" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 10v11"/><path d="M19 10v11"/><path d="M9 10v11"/><path d="M15 10v11"/><path d="M12 2l10 5H2l10-5z"/></svg>
+            <div class="partner-card-icon-box partner-logo-box">
+              <img src="${escapeHtml(bapendaLogo.url)}" alt="${escapeHtml(bapendaLogo.alt)}" loading="lazy" decoding="async">
             </div>
             <div class="partner-card-head">
               <h3>BAPENDA</h3>
@@ -1037,8 +1048,8 @@ function renderPublicPage(db, options = {}) {
           </article>
 
           <article class="partner-tripartite-card">
-            <div class="partner-card-icon-box" aria-hidden="true">
-              <svg class="aui-lucide-icon" data-aui-icon="shield" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <div class="partner-card-icon-box partner-logo-box">
+              <img src="${escapeHtml(ditlantasLogo.url)}" alt="${escapeHtml(ditlantasLogo.alt)}" loading="lazy" decoding="async">
             </div>
             <div class="partner-card-head">
               <h3>DITLANTAS</h3>
@@ -1049,8 +1060,8 @@ function renderPublicPage(db, options = {}) {
           </article>
 
           <article class="partner-tripartite-card">
-            <div class="partner-card-icon-box" aria-hidden="true">
-              <svg class="aui-lucide-icon" data-aui-icon="shield-plus" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="14"/><line x1="9" y1="11" x2="15" y2="11"/></svg>
+            <div class="partner-card-icon-box partner-logo-box">
+              <img src="${escapeHtml(jrLogo.url)}" alt="${escapeHtml(jrLogo.alt)}" loading="lazy" decoding="async">
             </div>
             <div class="partner-card-head">
               <h3>PT JASA RAHARJA</h3>
@@ -1058,7 +1069,8 @@ function renderPublicPage(db, options = {}) {
             </div>
             <p class="partner-card-body">Penyelenggara perlindungan asuransi kecelakaan penumpang dan lalu lintas jalan melalui pengelolaan dana SWDKLLJ terpadu.</p>
             <a href="https://www.jasaraharja.co.id" target="_blank" rel="noopener noreferrer" class="partner-card-link">Website PT Jasa Raharja &nearr;</a>
-          </article>
+          </article>`;
+          })()}
         </div>
       </div>
     </section>
@@ -1082,7 +1094,7 @@ function renderPublicPage(db, options = {}) {
         <div class="footer-col">
           <h3>TAUTAN CEPAT</h3>
           <ul>
-            <li><a href="#layanan">Jadwal Samsat Keliling</a></li>
+            <li><a href="#samsat-keliling">Jadwal Samsat Keliling</a></li>
             <li><a href="${escapeHtml(taxUrl)}" target="_blank" rel="noopener noreferrer">Simulasi Tarif PKB &amp; BBNKB</a></li>
             <li><a href="#layanan">Panduan Pembayaran Digital</a></li>
             <li><a href="#layanan">Syarat Perpanjangan STNK</a></li>
@@ -1121,11 +1133,6 @@ function renderPublicPage(db, options = {}) {
       </div>
     </div>
   </footer>
-
-  <div class="mobile-bottom-bar" role="region" aria-label="Akses cepat ponsel">
-    <a href="${escapeHtml(taxUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-accent mobile-bar-btn" data-track-action="cek_pajak">${taxLabel}</a>
-    <a href="#lokasi" class="btn btn-secondary mobile-bar-btn">Lokasi Kantor</a>
-  </div>
 
   <dialog id="pejabat-list-dialog" class="civic-dialog glass-dialog" aria-labelledby="pejabat-list-title">
     <button type="button" class="glass-close-btn" data-close-dialog="pejabat-list-dialog" aria-label="Tutup daftar pejabat">
