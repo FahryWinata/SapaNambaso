@@ -9,6 +9,7 @@ const { URL } = require('node:url');
 const {
   loadDatabase,
   saveDatabase,
+  normalizeDatabase,
   createBackupFile,
   hasUnpublishedChanges,
   getStalenessAlerts,
@@ -91,14 +92,14 @@ function parseCookies(req) {
   return map;
 }
 
-function readBody(req) {
+function readBody(req, maxBytes = MAX_BODY_BYTES) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let total = 0;
     req.on('data', (chunk) => {
       total += chunk.length;
-      if (total > MAX_BODY_BYTES) {
-        reject(new Error('Ukuran permintaan melebihi batas maksimal 4 MB'));
+      if (total > maxBytes) {
+        reject(new Error(`Ukuran permintaan melebihi batas maksimal ${Math.round(maxBytes / (1024 * 1024))} MB`));
         req.destroy();
         return;
       }
@@ -910,30 +911,57 @@ async function handleRequest(req, res) {
   }
 
   if (req.method === 'GET' && pathname === '/api/admin/backup') {
-    const auth = requireAuth(req, res);
+    const auth = requireAuth(req, res, ['Super Admin']);
     if (!auth) return;
     const db = loadDatabase();
     createBackupFile('download');
+    const uploads = [];
+    if (fs.existsSync(UPLOADS_DIR)) {
+      for (const fname of fs.readdirSync(UPLOADS_DIR)) {
+        const full = path.join(UPLOADS_DIR, fname);
+        if (fs.statSync(full).isFile()) {
+          uploads.push({
+            filename: fname,
+            base64: fs.readFileSync(full).toString('base64')
+          });
+        }
+      }
+    }
+    const bundle = { ...db, _uploads: uploads, _exportedAt: new Date().toISOString() };
+    const dateTag = new Date().toISOString().slice(0, 10);
     sendSecurityHeaders(res);
     res.writeHead(200, {
       'Content-Type': 'application/json; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="cadangan-sapa-nambaso.json"'
+      'Content-Disposition': `attachment; filename="cadangan-sapa-nambaso-${dateTag}.json"`
     });
-    res.end(JSON.stringify(db, null, 2));
+    res.end(JSON.stringify(bundle, null, 2));
     return;
   }
 
   if (req.method === 'POST' && pathname === '/api/admin/restore') {
     const auth = requireAuth(req, res, ['Super Admin']);
     if (!auth) return;
-    const parsed = parseJsonBody(await readBody(req));
+    const parsed = parseJsonBody(await readBody(req, 32 * 1024 * 1024));
     if (!parsed || !parsed.publishedContent || !parsed.draftContent || !Array.isArray(parsed.users)) {
       sendJson(res, 400, { error: 'Format berkas cadangan tidak valid.' });
       return;
     }
     createBackupFile('pre-restore');
-    saveDatabase(parsed);
-    sendJson(res, 200, { ok: true });
+    let restoredUploads = 0;
+    if (Array.isArray(parsed._uploads)) {
+      fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+      for (const fileItem of parsed._uploads) {
+        const safeName = path.basename(String(fileItem?.filename || ''));
+        if (!safeName || !fileItem?.base64) continue;
+        fs.writeFileSync(path.join(UPLOADS_DIR, safeName), Buffer.from(String(fileItem.base64), 'base64'));
+        restoredUploads += 1;
+      }
+    }
+    delete parsed._uploads;
+    delete parsed._exportedAt;
+    const cleanDb = normalizeDatabase(parsed);
+    saveDatabase(cleanDb);
+    sendJson(res, 200, { ok: true, restoredUploads });
     return;
   }
 

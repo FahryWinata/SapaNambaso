@@ -35,7 +35,8 @@
     { id: 'contacts', group: 'Konten Situs Publik', label: 'Kontak dan Pengaduan', icon: 'phone' },
     { id: 'announcements', group: 'Konten Situs Publik', label: 'Berita, Event, dan Pengumuman', icon: 'megaphone' },
     { id: 'extras', group: 'Konten Situs Publik', label: 'Tautan Mitra, FAQ, dan SEO', icon: 'help-circle' },
-    { id: 'assets', group: 'Pengaturan dan Aset', label: 'Kelola Foto & Aset', icon: 'image' }
+    { id: 'assets', group: 'Pengaturan dan Aset', label: 'Kelola Foto & Aset', icon: 'image' },
+    { id: 'backup', group: 'Pengaturan dan Aset', label: 'Backup & Pulihkan', icon: 'download' }
   ];
 
   const LUCIDE_PATHS = {
@@ -1791,6 +1792,9 @@
         break;
       case 'assets':
         renderAssetsModule(readOnlyAttr);
+        break;
+      case 'backup':
+        renderBackupModule();
         break;
       default:
         state.activeModule = 'analytics';
@@ -5566,6 +5570,102 @@
     }
 
     paintInbox();
+  }
+
+  function renderBackupModule() {
+    const isSuperAdmin = state.user?.role === 'Super Admin';
+    const counts = {
+      services: (state.adminData?.draftContent?.services || []).length,
+      locations: (state.adminData?.draftContent?.locations || []).length,
+      announcements: (state.adminData?.draftContent?.announcements || []).length,
+      media: (state.adminData?.media || []).filter((m) => !m.isPlaceholder).length
+    };
+
+    moduleContent.innerHTML = `
+      <div class="module-header">
+        <div>
+          <h1>Backup &amp; Pulihkan Seluruh Data</h1>
+          <p class="meta-text" style="margin:0.25rem 0 0">Ekspor atau pulihkan seluruh konten situs, pengaturan warna tema, foto unggahan, aduan &amp; saran, serta data analitik dalam satu berkas cadangan.</p>
+        </div>
+      </div>
+
+      ${!isSuperAdmin ? '<div class="alert-box alert-warn">Hanya <strong>Super Admin</strong> yang dapat mengunduh atau memulihkan cadangan penuh sistem.</div>' : ''}
+
+      <div class="grid-2">
+        <section class="panel-card" aria-label="Ekspor cadangan data">
+          <h2 style="margin-top:0">Ekspor / Unduh Cadangan (.json)</h2>
+          <p class="meta-text">Mengunduh seluruh database (konten draf, konten terbit, warna tema, aduan &amp; saran, analitik, akun petugas) beserta seluruh foto yang pernah diunggah.</p>
+          <ul class="req-list" style="margin:0.85rem 0 1.25rem">
+            <li>Layanan PNBP: <strong>${counts.services}</strong> item</li>
+            <li>Lokasi Kantor &amp; Gerai: <strong>${counts.locations}</strong> lokasi</li>
+            <li>Slide Pengumuman: <strong>${counts.announcements}</strong> slide</li>
+            <li>Foto Unggahan Kustom: <strong>${counts.media}</strong> file</li>
+          </ul>
+          <a href="/api/admin/backup" class="btn btn-primary ${isSuperAdmin ? '' : 'is-disabled'}" ${isSuperAdmin ? '' : 'aria-disabled="true" onclick="return false;"'}>
+            ${lucideIcon('download', 16)} Unduh Backup Lengkap (.json)
+          </a>
+        </section>
+
+        <section class="panel-card" aria-label="Impor dan pulihkan data">
+          <h2 style="margin-top:0">Impor / Pulihkan dari Berkas (.json)</h2>
+          <p class="meta-text">Pilih berkas cadangan <code>.json</code> hasil ekspor sebelumnya. Sistem akan otomatis membuat cadangan darurat sebelum menimpa data dan foto yang sedang aktif.</p>
+          <form id="backup-restore-form" style="margin-top:1rem">
+            <div class="field-group">
+              <label for="backup-file-input">Pilih Berkas Cadangan (.json)</label>
+              <input type="file" id="backup-file-input" accept=".json,application/json" ${isSuperAdmin ? '' : 'disabled'} required>
+            </div>
+            <button type="submit" id="backup-restore-btn" class="btn btn-danger" ${isSuperAdmin ? '' : 'disabled'}>
+              ${lucideIcon('upload', 16)} Pulihkan Seluruh Data
+            </button>
+          </form>
+        </section>
+      </div>
+    `;
+
+    const formEl = document.getElementById('backup-restore-form');
+    const fileInput = document.getElementById('backup-file-input');
+    const submitBtn = document.getElementById('backup-restore-btn');
+
+    formEl?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!isSuperAdmin) return;
+      const file = fileInput?.files?.[0];
+      if (!file) {
+        showFeedback('Silakan pilih berkas cadangan .json terlebih dahulu.', 'error');
+        return;
+      }
+
+      const { confirmed } = await confirmAdminAction({
+        title: 'Pulihkan Seluruh Data dari Cadangan?',
+        message: `Seluruh konten, pengaturan tema, aduan & saran, serta foto unggahan akan diganti dengan isi dari "${file.name}". Lanjutkan?`,
+        confirmLabel: 'Ya, Pulihkan Data',
+        variant: 'danger'
+      });
+      if (!confirmed) return;
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Memulihkan...';
+      }
+
+      try {
+        const text = await file.text();
+        const res = await api('/api/admin/restore', {
+          method: 'POST',
+          body: text
+        });
+        await loadAdminData();
+        renderActiveModule();
+        showFeedback(`Pemulihan berhasil! ${res.restoredUploads || 0} file foto dan seluruh database telah dipulihkan.`, 'success');
+      } catch (err) {
+        showFeedback(`Gagal memulihkan data: ${err.message}`, 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `${lucideIcon('upload', 16)} Pulihkan Seluruh Data`;
+        }
+      }
+    });
   }
 
   enhanceAdminControls(document);

@@ -501,7 +501,7 @@ function renderPublicPage(db, options = {}) {
   </div>` : '';
 
   return `<!doctype html>
-<html lang="id" data-theme="dark">
+<html lang="id" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -545,7 +545,7 @@ function renderPublicPage(db, options = {}) {
       </nav>
 
       <div class="header-actions">
-        <button type="button" id="theme-toggle" class="theme-toggler-btn" aria-pressed="true" aria-label="Ganti ke mode terang" title="Ganti Mode Terang / Gelap" data-slot="theme-toggler-button">
+        <button type="button" id="theme-toggle" class="theme-toggler-btn" aria-pressed="false" aria-label="Ganti ke mode gelap" title="Ganti Mode Terang / Gelap" data-slot="theme-toggler-button">
           <span class="theme-icon-swap" aria-hidden="true">
             <svg class="theme-icon theme-icon-sun aui-lucide-icon" data-aui-icon="sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="4"></circle>
@@ -811,15 +811,36 @@ function renderPublicPage(db, options = {}) {
             </div>
             <div class="contact-social-pills">
               <a href="${escapeHtml(safeUrl(content.contacts?.instagramUrl))}" target="_blank" rel="noopener noreferrer" class="social-pill-btn social-ig" data-track-action="social_instagram" aria-label="Instagram Resmi">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="ig-brand-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="#F58529"/>
+                      <stop offset="45%" stop-color="#DD2A7B"/>
+                      <stop offset="75%" stop-color="#8134AF"/>
+                      <stop offset="100%" stop-color="#515BD4"/>
+                    </linearGradient>
+                  </defs>
+                  <rect x="2" y="2" width="20" height="20" rx="6" fill="url(#ig-brand-grad)"/>
+                  <rect x="6.5" y="6.5" width="11" height="11" rx="3.2" fill="none" stroke="#FFFFFF" stroke-width="1.7"/>
+                  <circle cx="12" cy="12" r="2.7" fill="none" stroke="#FFFFFF" stroke-width="1.7"/>
+                  <circle cx="15.8" cy="8.2" r="0.9" fill="#FFFFFF"/>
+                </svg>
                 <span>Instagram</span>
               </a>
               <a href="${escapeHtml(safeUrl(content.contacts?.facebookUrl))}" target="_blank" rel="noopener noreferrer" class="social-pill-btn social-fb" data-track-action="social_facebook" aria-label="Facebook Resmi">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M14 13.5h2.5l1-4H14v-2c0-1.03 0-2 2-2h1.5V2.14c-.326-.043-1.557-.14-2.857-.14C11.928 2 10 3.657 10 6.7v2.8H7v4h3V22h4v-8.5z"/></svg>
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" fill="#1877F2"/>
+                  <path d="M13.5 13.4h2.1l.4-2.7h-2.5V9.1c0-.8.3-1.4 1.5-1.4h1.1V5.4c-.2 0-.9-.1-1.9-.1-2 0-3.3 1.2-3.3 3.4v2H8.7v2.7h2.2V21c.4.1.7.1 1.1.1s.9 0 1.5-.1v-7.6z" fill="#FFFFFF"/>
+                </svg>
                 <span>Facebook</span>
               </a>
               <a href="${escapeHtml(safeUrl(content.contacts?.tiktokUrl))}" target="_blank" rel="noopener noreferrer" class="social-pill-btn social-tt" data-track-action="social_tiktok" aria-label="TikTok Resmi">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 0 0-.79-.05A6.34 6.34 0 0 0 3.15 15a6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.87a8.16 8.16 0 0 0 4.76 1.52v-3.4a4.85 4.85 0 0 1-1-.3z"/></svg>
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                  <rect x="2" y="2" width="20" height="20" rx="6" fill="#0F172A"/>
+                  <path d="M16.8 8.7a3.6 3.6 0 0 1-2.6-2.9V5.4h-2.1v8.7a1.9 1.9 0 1 1-1.4-1.8V10a4.2 4.2 0 1 0 3.5 4.1V9.7a5.6 5.6 0 0 0 3.2 1V8.7z" fill="#25F4EE" transform="translate(-0.6,-0.4)"/>
+                  <path d="M16.8 8.7a3.6 3.6 0 0 1-2.6-2.9V5.4h-2.1v8.7a1.9 1.9 0 1 1-1.4-1.8V10a4.2 4.2 0 1 0 3.5 4.1V9.7a5.6 5.6 0 0 0 3.2 1V8.7z" fill="#FE2C55" transform="translate(0.6,0.4)"/>
+                  <path d="M16.8 8.7a3.6 3.6 0 0 1-2.6-2.9V5.4h-2.1v8.7a1.9 1.9 0 1 1-1.4-1.8V10a4.2 4.2 0 1 0 3.5 4.1V9.7a5.6 5.6 0 0 0 3.2 1V8.7z" fill="#FFFFFF"/>
+                </svg>
                 <span>TikTok</span>
               </a>
             </div>

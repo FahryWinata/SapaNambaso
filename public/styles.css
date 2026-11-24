@@ -1128,8 +1128,8 @@ img {
   padding: 1.15rem 1.35rem;
   min-height: 48px;
   cursor: pointer;
-  background: var(--secondary-accent);
-  color: var(--secondary-ink);
+  background: var(--accent-primary);
+  color: var(--accent-ink);
   transition: background-color 180ms ease, color 180ms ease;
   user-select: none;
 }
@@ -1139,28 +1139,28 @@ img {
 }
 
 .service-summary:hover {
-  background: var(--secondary-hover);
+  background: var(--accent-hover);
 }
 
 .service-num {
   font-weight: 800;
   font-size: 1rem;
-  color: var(--secondary-ink);
+  color: var(--accent-ink);
   padding: 0.35rem 0.65rem;
-  border: 1px solid color-mix(in srgb, var(--secondary-ink) 24%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-ink) 24%, transparent);
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--secondary-ink) 12%, transparent);
+  background: color-mix(in srgb, var(--accent-ink) 12%, transparent);
   flex-shrink: 0;
   transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease;
 }
 
 .service-details[open] {
-  border-color: var(--secondary-accent);
+  border-color: var(--accent-primary);
 }
 
 .service-details[open] > .service-summary {
-  background: var(--secondary-hover);
-  color: var(--secondary-ink);
+  background: var(--accent-hover);
+  color: var(--accent-ink);
 }
 
 .service-details[open] .service-num {
@@ -1180,11 +1180,11 @@ img {
 .service-name {
   font-size: 1.125rem;
   font-weight: 700;
-  color: var(--secondary-ink);
+  color: var(--accent-ink);
 }
 
 .service-brief {
-  color: var(--secondary-ink);
+  color: var(--accent-ink);
   opacity: 0.9;
   font-size: 0.95rem;
   line-height: 1.5;
@@ -1194,8 +1194,8 @@ img {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--secondary-ink) 12%, transparent);
-  color: var(--secondary-ink);
+  background: color-mix(in srgb, var(--accent-ink) 12%, transparent);
+  color: var(--accent-ink);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1815,15 +1815,15 @@ img {
 }
 
 .btn-wa-solid {
-  background: #15803D;
-  color: #FFFFFF;
-  border-color: #15803D;
+  background: var(--secondary-accent);
+  color: var(--secondary-ink);
+  border-color: var(--secondary-accent);
 }
 
 .btn-wa-solid:hover {
-  background: #166534;
-  border-color: #166534;
-  color: #FFFFFF;
+  background: var(--secondary-hover);
+  border-color: var(--secondary-hover);
+  color: var(--secondary-ink);
 }
 
 .contact-social-handles {

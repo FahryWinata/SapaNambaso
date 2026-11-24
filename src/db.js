@@ -371,6 +371,7 @@ function deleteFeedbackEntry(id) {
 module.exports = {
   loadDatabase,
   saveDatabase,
+  normalizeDatabase,
   createBackupFile,
   hasUnpublishedChanges,
   getStalenessAlerts,
