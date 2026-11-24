@@ -8,6 +8,7 @@
   'use strict';
 
   const DEFAULT_THEME_COLOR = '#38BDF8';
+  const DEFAULT_SECONDARY_COLOR = '#0EA5E9';
 
   const THEME_PRESETS = [
     { name: 'Biru Langit (Bawaan)', hex: '#38BDF8' },
@@ -17,6 +18,15 @@
     { name: 'Ungu Indigo', hex: '#7C3AED' },
     { name: 'Merah Marun', hex: '#DC2626' },
     { name: 'Oranye Emas', hex: '#EA580C' }
+  ];
+
+  const SECONDARY_PRESETS = [
+    { name: 'Biru Bawaan', hex: '#0EA5E9' },
+    { name: 'Emas Hangat', hex: '#F59E0B' },
+    { name: 'Oranye Cerah', hex: '#EA580C' },
+    { name: 'Hijau Zamrud', hex: '#10B981' },
+    { name: 'Biru Navy', hex: '#0D4183' },
+    { name: 'Merah Marun', hex: '#DC2626' }
   ];
 
   function normalizeHex(value) {
@@ -169,15 +179,23 @@
     return darkRatio >= lightRatio ? darkCandidate : lightCandidate;
   }
 
-  function buildThemeTokens(rawHex, rawStyle = 'gradient') {
+  function buildThemeTokens(rawHex, rawStyle = 'gradient', rawSecondaryHex = DEFAULT_SECONDARY_COLOR) {
     const hex = normalizeHex(rawHex) || DEFAULT_THEME_COLOR;
+    const secondaryHex = normalizeHex(rawSecondaryHex) || DEFAULT_SECONDARY_COLOR;
     const style = rawStyle === 'flat' ? 'flat' : 'gradient';
-    if (hex === DEFAULT_THEME_COLOR && style === 'gradient') {
+    if (hex === DEFAULT_THEME_COLOR && style === 'gradient' && secondaryHex === DEFAULT_SECONDARY_COLOR) {
       return null;
     }
 
     const { h, s, l } = hexToHsl(hex);
     const { r, g, b } = hexToRgb(hex);
+
+    const secHsl = hexToHsl(secondaryHex);
+    const secRgb = hexToRgb(secondaryHex);
+    const secondaryInk = pickAccessibleInk(secondaryHex, '#0F172A', '#FFFFFF');
+    const secHoverL = secondaryInk === '#FFFFFF' ? Math.max(secHsl.l - 8, 18) : Math.min(Math.max(secHsl.l - 8, 38), 75);
+    const secondaryHover = hslToHex(secHsl.h, Math.min(secHsl.s + 5, 92), secHoverL);
+    const secondaryTint = hslToHex(secHsl.h, Math.min(secHsl.s, 82), 92);
 
     const accentInk = pickAccessibleInk(hex, '#0F172A', '#FFFFFF');
     const hoverL = accentInk === '#FFFFFF' ? Math.max(l - 8, 18) : Math.min(Math.max(l - 8, 38), 75);
@@ -191,7 +209,7 @@
     const heroInk = pickAccessibleInk(heroBg, '#0F172A', '#FFFFFF');
     const heroGradient = style === 'flat'
       ? 'none'
-      : `radial-gradient(ellipse at 86% 14%, rgba(255, 255, 255, 0.45), transparent 48%), radial-gradient(ellipse at 14% 88%, rgba(${r}, ${g}, ${b}, 0.22), transparent 52%), linear-gradient(145deg, ${heroStart} 0%, ${heroMid} 48%, ${heroEnd} 100%)`;
+      : `radial-gradient(ellipse at 86% 14%, rgba(${secRgb.r}, ${secRgb.g}, ${secRgb.b}, 0.28), transparent 48%), radial-gradient(ellipse at 14% 88%, rgba(${r}, ${g}, ${b}, 0.22), transparent 52%), linear-gradient(145deg, ${heroStart} 0%, ${heroMid} 48%, ${heroEnd} 100%)`;
     const brandPrimary = hslToHex(h, Math.min(Math.max(s, 45), 86), 27);
     const focusRing = hslToHex(h, Math.min(Math.max(s, 55), 90), 38);
 
@@ -205,6 +223,10 @@
       accentHover,
       accentBright,
       accentInk,
+      secondaryAccent: secondaryHex,
+      secondaryHover,
+      secondaryInk,
+      secondaryTint,
       heroBg,
       heroInk,
       heroInkSoft: heroInk,
@@ -219,6 +241,9 @@
     const darkAccent = hslToHex(h, Math.min(Math.max(s, 55), 88), 62);
     const darkAccentHover = hslToHex(h, Math.min(Math.max(s, 60), 90), 74);
     const darkAccentRgb = hexToRgb(darkAccent);
+    const darkSecAccent = hslToHex(secHsl.h, Math.min(Math.max(secHsl.s, 55), 88), Math.max(secHsl.l, 56));
+    const darkSecInk = pickAccessibleInk(darkSecAccent, '#0F172A', '#FFFFFF');
+    const darkSecHover = hslToHex(secHsl.h, Math.min(Math.max(secHsl.s, 60), 90), Math.min(Math.max(secHsl.l, 56) + 10, 76));
     const darkHero1 = hslToHex(h, Math.min(Math.max(s, 50), 78), 16);
     const darkHero2 = hslToHex(h, Math.min(Math.max(s, 52), 80), 23);
     const darkHero3 = hslToHex(h, Math.min(Math.max(s, 50), 78), 29);
@@ -233,6 +258,10 @@
       accentHover: darkAccentHover,
       accentBright: hslToHex(h, Math.min(Math.max(s, 55), 86), 48),
       accentInk: pickAccessibleInk(darkAccent, '#0F172A', '#FFFFFF'),
+      secondaryAccent: darkSecAccent,
+      secondaryHover: darkSecHover,
+      secondaryInk: darkSecInk,
+      secondaryTint: hslToHex(secHsl.h, Math.min(secHsl.s, 45), 22),
       heroBg: darkHero2,
       heroInk: '#FFFFFF',
       heroInkSoft: hslToHex(h, Math.min(s, 75), 93),
@@ -245,15 +274,17 @@
 
     return {
       hex,
+      secondaryHex,
       style,
       light,
       dark,
-      contrastRatio: Number(getContrastRatio(hex, accentInk).toFixed(2))
+      contrastRatio: Number(getContrastRatio(hex, accentInk).toFixed(2)),
+      secondaryContrastRatio: Number(getContrastRatio(secondaryHex, secondaryInk).toFixed(2))
     };
   }
 
-  function buildThemeCss(rawHex, rawStyle = 'gradient') {
-    const palette = buildThemeTokens(rawHex, rawStyle);
+  function buildThemeCss(rawHex, rawStyle = 'gradient', rawSecondaryHex = DEFAULT_SECONDARY_COLOR) {
+    const palette = buildThemeTokens(rawHex, rawStyle, rawSecondaryHex);
     if (!palette) return '';
     const { light, dark } = palette;
     return [
@@ -267,6 +298,10 @@
       `  --accent-hover: ${light.accentHover};`,
       `  --accent-bright: ${light.accentBright};`,
       `  --accent-ink: ${light.accentInk};`,
+      `  --secondary-accent: ${light.secondaryAccent};`,
+      `  --secondary-hover: ${light.secondaryHover};`,
+      `  --secondary-ink: ${light.secondaryInk};`,
+      `  --secondary-tint: ${light.secondaryTint};`,
       `  --hero-bg: ${light.heroBg};`,
       `  --hero-ink: ${light.heroInk};`,
       `  --hero-ink-soft: ${light.heroInkSoft};`,
@@ -287,6 +322,10 @@
       `  --accent-hover: ${dark.accentHover};`,
       `  --accent-bright: ${dark.accentBright};`,
       `  --accent-ink: ${dark.accentInk};`,
+      `  --secondary-accent: ${dark.secondaryAccent};`,
+      `  --secondary-hover: ${dark.secondaryHover};`,
+      `  --secondary-ink: ${dark.secondaryInk};`,
+      `  --secondary-tint: ${dark.secondaryTint};`,
       `  --hero-bg: ${dark.heroBg};`,
       `  --hero-ink: ${dark.heroInk};`,
       `  --hero-ink-soft: ${dark.heroInkSoft};`,
@@ -299,7 +338,9 @@
 
   return {
     DEFAULT_THEME_COLOR,
+    DEFAULT_SECONDARY_COLOR,
     THEME_PRESETS,
+    SECONDARY_PRESETS,
     normalizeHex,
     hexToRgb,
     rgbToHex,

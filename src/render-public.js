@@ -501,7 +501,7 @@ function renderPublicPage(db, options = {}) {
   </div>` : '';
 
   return `<!doctype html>
-<html lang="id" data-theme="light">
+<html lang="id" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -515,7 +515,7 @@ function renderPublicPage(db, options = {}) {
   <meta name="twitter:image" content="${escapeHtml(safeUrl(sharePreviewMedia.url))}">
   <link rel="icon" href="${escapeHtml(safeUrl(content.identity?.faviconUrl || siteLogo.url))}">
   <link rel="stylesheet" href="/styles.css">${(() => {
-    const customCss = buildThemeCss(content.identity?.themeColor, content.identity?.themeStyle);
+    const customCss = buildThemeCss(content.identity?.themeColor, content.identity?.themeStyle, content.identity?.themeSecondaryColor);
     return customCss ? `\n  <style id="sapa-custom-theme">\n${customCss}\n  </style>` : '';
   })()}
   <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
@@ -545,7 +545,7 @@ function renderPublicPage(db, options = {}) {
       </nav>
 
       <div class="header-actions">
-        <button type="button" id="theme-toggle" class="theme-toggler-btn" aria-pressed="false" aria-label="Ganti ke mode gelap" title="Ganti Mode Terang / Gelap" data-slot="theme-toggler-button">
+        <button type="button" id="theme-toggle" class="theme-toggler-btn" aria-pressed="true" aria-label="Ganti ke mode terang" title="Ganti Mode Terang / Gelap" data-slot="theme-toggler-button">
           <span class="theme-icon-swap" aria-hidden="true">
             <svg class="theme-icon theme-icon-sun aui-lucide-icon" data-aui-icon="sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="4"></circle>
@@ -690,36 +690,6 @@ function renderPublicPage(db, options = {}) {
         </div>
       </div>
     </section>
-
-    ${(() => {
-      const kelilingItems = (Array.isArray(content.samsatKeliling) ? content.samsatKeliling : []).filter((k) => k && k.enabled !== false);
-      if (!kelilingItems.length) return '';
-      const skTitle = content.seo?.sectionTitles?.samsatKeliling || 'Jadwal Samsat Keliling';
-      return `
-    <section id="samsat-keliling" class="samsat-keliling-section animate-ui-reveal" aria-labelledby="heading-samsat-keliling">
-      <div class="container">
-        <div class="ledger-header">
-          <div class="ledger-title-group">
-            <h2 id="heading-samsat-keliling">${escapeHtml(skTitle)}</h2>
-          </div>
-        </div>
-        <p class="section-intro">Layanan mobil Samsat Keliling beroperasi secara rutin untuk memudahkan pengesahan pajak kendaraan tahunan di titik keramaian Kota Palu.</p>
-        <div class="keliling-grid">
-          ${kelilingItems.map((item) => `
-            <article class="keliling-card">
-              <div class="keliling-card-top">
-                <span class="keliling-day-pill">${escapeHtml(item.dayLabel || 'Jadwal Rutin')}</span>
-                <span class="keliling-time num-tabular">${escapeHtml(item.timeRange || '')}</span>
-              </div>
-              <h3 class="keliling-location">${escapeHtml(item.location || '')}</h3>
-              ${item.serviceScope ? `<p class="keliling-scope">${escapeHtml(item.serviceScope)}</p>` : ''}
-              ${item.note ? `<p class="keliling-note">${escapeHtml(item.note)}</p>` : ''}
-            </article>
-          `).join('')}
-        </div>
-      </div>
-    </section>`;
-    })()}
 
     <section id="layanan" class="services-section animate-ui-reveal" aria-labelledby="heading-layanan">
       <div class="container">
@@ -1094,7 +1064,7 @@ function renderPublicPage(db, options = {}) {
         <div class="footer-col">
           <h3>TAUTAN CEPAT</h3>
           <ul>
-            <li><a href="#samsat-keliling">Jadwal Samsat Keliling</a></li>
+            <li><a href="#layanan">Jenis Layanan &amp; Tarif PNBP</a></li>
             <li><a href="${escapeHtml(taxUrl)}" target="_blank" rel="noopener noreferrer">Simulasi Tarif PKB &amp; BBNKB</a></li>
             <li><a href="#layanan">Panduan Pembayaran Digital</a></li>
             <li><a href="#layanan">Syarat Perpanjangan STNK</a></li>

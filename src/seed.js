@@ -137,38 +137,6 @@ function createInitialMedia() {
   ];
 }
 
-function createDefaultSamsatKeliling() {
-  return [
-    {
-      id: 'sk-senin-kamis',
-      enabled: true,
-      dayLabel: 'Senin s.d. Kamis',
-      timeRange: '08.30 s.d. 13.00 WITA',
-      location: 'Area Taman GOR / Jl. Moh. Hatta, Kota Palu',
-      serviceScope: 'Pengesahan Pajak Tahunan dan Cetak SKPD',
-      note: 'Siapkan STNK asli dan KTP pemilik kendaraan.'
-    },
-    {
-      id: 'sk-jumat',
-      enabled: true,
-      dayLabel: 'Jumat',
-      timeRange: '08.30 s.d. 11.30 WITA',
-      location: 'Lapangan Vatulemo, Kota Palu',
-      serviceScope: 'Pengesahan Pajak Tahunan dan Konsultasi Pajak',
-      note: 'Berhenti sementara saat waktu salat Jumat.'
-    },
-    {
-      id: 'sk-sabtu',
-      enabled: true,
-      dayLabel: 'Sabtu',
-      timeRange: '08.30 s.d. 12.00 WITA',
-      location: 'Pusat Keramaian Kota Palu (Jadwal Rutin Akhir Pekan)',
-      serviceScope: 'Pengesahan Pajak Tahunan',
-      note: 'Lokasi titik akhir pekan dapat menyesuaikan agenda kota.'
-    }
-  ];
-}
-
 function createDefaultAnnouncements() {
   return [
     {
@@ -226,6 +194,7 @@ function createInitialContent() {
       faviconUrl: '/assets/placeholders/logo-sapa-nambaso.svg',
       sharePreviewImageId: 'media-hero-kantor',
       themeColor: '#38BDF8',
+      themeSecondaryColor: '#0EA5E9',
       themeStyle: 'gradient',
       splashEnabled: true,
       splashShowText: true,
@@ -562,7 +531,6 @@ function createInitialContent() {
       sectionTitles: {
         announcements: 'Berita, Event, dan Pengumuman',
         hours: 'Jam Layanan WITA',
-        samsatKeliling: 'Jadwal Samsat Keliling',
         services: 'Jenis Layanan, Biaya PNBP, dan Persyaratan',
         profile: 'Profil UPTB Pendapatan Daerah Wilayah I Palu',
         locations: 'Lokasi Kantor Induk dan Gerai Samsat Palu',
@@ -570,8 +538,7 @@ function createInitialContent() {
         faq: 'Pertanyaan yang Sering Diajukan',
         partners: 'Tautan Terkait dan Instansi Mitra'
       }
-    },
-    samsatKeliling: createDefaultSamsatKeliling()
+    }
   };
 }
 
@@ -631,7 +598,6 @@ module.exports = {
   createInitialDatabase,
   createInitialContent,
   createDefaultAnnouncements,
-  createDefaultSamsatKeliling,
   createInitialMedia,
   createInitialUsers
 };

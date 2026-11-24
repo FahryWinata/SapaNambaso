@@ -122,9 +122,7 @@
   }
 
   const savedTheme = window.localStorage.getItem('sapa_theme');
-  if (savedTheme === 'dark' || savedTheme === 'light') {
-    applyTheme(savedTheme);
-  }
+  applyTheme(savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'dark');
 
   if (themeBtn) {
     themeBtn.addEventListener('click', () => {

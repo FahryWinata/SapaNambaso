@@ -30,7 +30,6 @@
     { id: 'hero-tax', group: 'Konten Situs Publik', label: 'Beranda dan Cek Pajak', icon: 'car' },
     { id: 'services', group: 'Konten Situs Publik', label: 'Layanan dan Tarif PNBP', icon: 'file-text' },
     { id: 'hours', group: 'Konten Situs Publik', label: 'Jam Operasional WITA', icon: 'clock' },
-    { id: 'samsat-keliling', group: 'Konten Situs Publik', label: 'Jadwal Samsat Keliling', icon: 'car' },
     { id: 'locations', group: 'Konten Situs Publik', label: 'Lokasi Kantor dan Gerai', icon: 'map-pin' },
     { id: 'profile', group: 'Konten Situs Publik', label: 'Profil dan Struktur', icon: 'building-2' },
     { id: 'contacts', group: 'Konten Situs Publik', label: 'Kontak dan Pengaduan', icon: 'phone' },
@@ -1775,9 +1774,6 @@
       case 'hours':
         renderHoursModule(draft, readOnlyAttr);
         break;
-      case 'samsat-keliling':
-        renderSamsatKelilingModule(draft, readOnlyAttr);
-        break;
       case 'locations':
         renderLocationsModule(draft, readOnlyAttr);
         break;
@@ -2716,19 +2712,21 @@
             <input type="text" id="id-favicon" value="${esc(id.faviconUrl)}" ${readOnlyAttr}>
           </div>
         </div>
-        ${renderThemeColorPicker(id.themeColor, id.themeStyle, readOnlyAttr)}
+        ${renderThemeColorPicker(id.themeColor, id.themeStyle, id.themeSecondaryColor, readOnlyAttr)}
         ${renderSplashSettings(id, readOnlyAttr)}
         <button type="submit" class="btn btn-primary" ${readOnlyAttr}>Simpan Draf Identitas</button>
       </form>
     `;
     bindMediaPickers(moduleContent);
-    bindThemeColorPicker(id.themeColor, id.themeStyle, Boolean(readOnlyAttr));
+    bindThemeColorPicker(id.themeColor, id.themeStyle, id.themeSecondaryColor, Boolean(readOnlyAttr));
     bindSplashSettings();
 
     document.getElementById('identity-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const rawTheme = document.getElementById('id-themeColor').value.trim();
       const normalizedTheme = window.SapaTheme?.normalizeHex(rawTheme) || '#38BDF8';
+      const rawSecondary = document.getElementById('id-themeSecondaryColor')?.value.trim() || '';
+      const normalizedSecondary = window.SapaTheme?.normalizeHex(rawSecondary) || '#0EA5E9';
       const themeStyle = document.getElementById('id-themeStyle')?.value === 'flat' ? 'flat' : 'gradient';
       await saveDraftSection('identity', {
         siteName: document.getElementById('id-siteName').value.trim(),
@@ -2740,6 +2738,7 @@
         sharePreviewImageId: document.getElementById('id-sharePreview').value,
         faviconUrl: document.getElementById('id-favicon').value.trim(),
         themeColor: normalizedTheme,
+        themeSecondaryColor: normalizedSecondary,
         themeStyle,
         splashEnabled: Boolean(document.getElementById('id-splashEnabled')?.checked),
         splashShowText: Boolean(document.getElementById('id-splashShowText')?.checked),
@@ -2816,17 +2815,19 @@
     }
   }
 
-  function renderThemeColorPicker(currentHex, currentStyle, readOnlyAttr) {
+  function renderThemeColorPicker(currentHex, currentStyle, currentSecondaryHex, readOnlyAttr) {
     const theme = window.SapaTheme;
     const activeHex = theme?.normalizeHex(currentHex) || theme?.DEFAULT_THEME_COLOR || '#38BDF8';
+    const activeSecondary = theme?.normalizeHex(currentSecondaryHex) || theme?.DEFAULT_SECONDARY_COLOR || '#0EA5E9';
     const activeStyle = currentStyle === 'flat' ? 'flat' : 'gradient';
     const presets = theme?.THEME_PRESETS || [];
+    const secondaryPresets = theme?.SECONDARY_PRESETS || [];
     return `
       <section class="aui-theme-picker-card" aria-label="Pengaturan tema warna situs publik">
         <div class="aui-theme-picker-header">
           <div class="aui-theme-picker-title">
             <h3>Tema Warna Situs Publik (Color Wheel)</h3>
-            <p>Ubah warna utama halaman publik, tombol aksi, dan banner beranda dengan kontras WCAG AA otomatis.</p>
+            <p>Ubah warna utama dan warna aksen kedua (tombol hero dan lencana) dengan kontras WCAG AA otomatis.</p>
           </div>
           <button type="button" id="aui-theme-reset-btn" class="btn btn-secondary btn-sm" ${readOnlyAttr}>Reset ke Biru Bawaan</button>
         </div>
@@ -2862,6 +2863,21 @@
                 </button>
               `).join('')}
             </div>
+            <div class="aui-secondary-picker-block" style="padding-top:0.5rem;border-top:1px solid var(--border-subtle)">
+              <strong style="display:block;font-size:0.86rem;color:var(--brand-primary);margin-bottom:0.45rem">Warna Aksen Kedua (Tombol Hero &amp; Lencana)</strong>
+              <div class="aui-hex-row" style="margin-bottom:0.5rem">
+                <input type="color" id="id-themeSecondaryNative" class="aui-native-color-btn" value="${esc(activeSecondary)}" aria-label="Pemilih warna aksen kedua" ${readOnlyAttr}>
+                <input type="text" id="id-themeSecondaryColor" class="aui-hex-input" value="${esc(activeSecondary)}" maxlength="7" placeholder="#0EA5E9" aria-label="Kode HEX warna kedua" ${readOnlyAttr}>
+              </div>
+              <div class="aui-preset-swatches" role="group" aria-label="Pilihan warna kedua cepat">
+                ${secondaryPresets.map((p) => `
+                  <button type="button" class="aui-swatch-pill ${p.hex === activeSecondary ? 'is-active' : ''}" data-secondary-hex="${esc(p.hex)}" ${readOnlyAttr}>
+                    <span class="aui-swatch-dot" style="background:${esc(p.hex)}"></span>
+                    <span>${esc(p.name)}</span>
+                  </button>
+                `).join('')}
+              </div>
+            </div>
             <div class="aui-theme-preview-box" id="aui-theme-preview-box">
               <div class="aui-theme-preview-hero" id="aui-theme-preview-hero">
                 <div>
@@ -2881,7 +2897,7 @@
     `;
   }
 
-  function bindThemeColorPicker(initialHex, initialStyle, isReadOnly) {
+  function bindThemeColorPicker(initialHex, initialStyle, initialSecondaryHex, isReadOnly) {
     const theme = window.SapaTheme;
     if (!theme) return;
 
@@ -2892,6 +2908,8 @@
     const brightnessLabel = document.getElementById('aui-brightness-val');
     const nativeInput = document.getElementById('id-themeColorNative');
     const hexInput = document.getElementById('id-themeColor');
+    const secondaryNativeInput = document.getElementById('id-themeSecondaryNative');
+    const secondaryHexInput = document.getElementById('id-themeSecondaryColor');
     const styleInput = document.getElementById('id-themeStyle');
     const styleBtns = Array.from(document.querySelectorAll('.aui-style-btn[data-theme-style]'));
     const resetBtn = document.getElementById('aui-theme-reset-btn');
@@ -2901,10 +2919,12 @@
     const ratioEl = document.getElementById('aui-contrast-ratio');
     const badgeEl = document.getElementById('aui-contrast-badge');
     const presetBtns = Array.from(document.querySelectorAll('.aui-swatch-pill[data-preset-hex]'));
+    const secondaryPresetBtns = Array.from(document.querySelectorAll('.aui-swatch-pill[data-secondary-hex]'));
 
     if (!canvas || !wheelWrap || !thumb || !brightnessInput || !nativeInput || !hexInput) return;
 
     let currentHex = theme.normalizeHex(initialHex) || theme.DEFAULT_THEME_COLOR;
+    let currentSecondary = theme.normalizeHex(initialSecondaryHex) || theme.DEFAULT_SECONDARY_COLOR || '#0EA5E9';
     let currentStyle = initialStyle === 'flat' ? 'flat' : 'gradient';
     let hsv = theme.hexToHsv(currentHex);
     const size = canvas.width;
@@ -2968,7 +2988,7 @@
         btn.classList.toggle('is-active', btn.dataset.presetHex === currentHex);
       }
 
-      const tokens = theme.buildThemeTokens(currentHex, currentStyle);
+      const tokens = theme.buildThemeTokens(currentHex, currentStyle, currentSecondary);
       const light = tokens ? tokens.light : {
         bgPage: '#F0F9FF',
         borderSoft: '#BAE6FD',
@@ -2976,8 +2996,18 @@
         heroGradient: 'linear-gradient(145deg, #BAE6FD 0%, #7DD3FC 48%, #38BDF8 100%)',
         heroInk: '#082F49',
         accentPrimary: '#38BDF8',
-        accentInk: '#082F49'
+        accentInk: '#082F49',
+        secondaryAccent: '#0EA5E9',
+        secondaryInk: '#FFFFFF'
       };
+
+      if (secondaryNativeInput) secondaryNativeInput.value = currentSecondary;
+      if (secondaryHexInput && document.activeElement !== secondaryHexInput) {
+        secondaryHexInput.value = currentSecondary;
+      }
+      for (const btn of secondaryPresetBtns) {
+        btn.classList.toggle('is-active', btn.dataset.secondaryHex === currentSecondary);
+      }
 
       if (styleInput) styleInput.value = currentStyle;
       for (const btn of styleBtns) {
@@ -2991,10 +3021,10 @@
       previewHero.style.backgroundColor = light.heroBg;
       previewHero.style.backgroundImage = light.heroGradient;
       previewHero.style.color = light.heroInk;
-      previewCta.style.backgroundColor = light.accentPrimary;
-      previewCta.style.color = light.accentInk;
+      previewCta.style.backgroundColor = light.secondaryAccent || light.accentPrimary;
+      previewCta.style.color = light.secondaryInk || light.accentInk;
 
-      const ratio = theme.getContrastRatio(light.accentPrimary, light.accentInk);
+      const ratio = theme.getContrastRatio(light.secondaryAccent || light.accentPrimary, light.secondaryInk || light.accentInk);
       ratioEl.textContent = `${ratio.toFixed(2)}:1`;
       if (ratio >= 4.5) {
         badgeEl.className = 'aui-contrast-badge is-pass';
@@ -3084,8 +3114,32 @@
       });
     }
 
+    secondaryNativeInput?.addEventListener('input', () => {
+      const nextSec = theme.normalizeHex(secondaryNativeInput.value);
+      if (!nextSec) return;
+      currentSecondary = nextSec;
+      updateUiFromHex(currentHex, false);
+    });
+
+    secondaryHexInput?.addEventListener('input', () => {
+      const nextSec = theme.normalizeHex(secondaryHexInput.value);
+      if (!nextSec) return;
+      currentSecondary = nextSec;
+      updateUiFromHex(currentHex, false);
+    });
+
+    for (const btn of secondaryPresetBtns) {
+      btn.addEventListener('click', () => {
+        const nextSec = theme.normalizeHex(btn.dataset.secondaryHex);
+        if (!nextSec) return;
+        currentSecondary = nextSec;
+        updateUiFromHex(currentHex, false);
+      });
+    }
+
     resetBtn?.addEventListener('click', () => {
       const def = theme.DEFAULT_THEME_COLOR;
+      currentSecondary = theme.DEFAULT_SECONDARY_COLOR || '#0EA5E9';
       currentStyle = 'gradient';
       const nextHsv = theme.hexToHsv(def);
       drawWheel(Math.max(25, nextHsv.v));
@@ -5512,147 +5566,6 @@
     }
 
     paintInbox();
-  }
-
-  function renderSamsatKelilingModule(draft, readOnlyAttr) {
-    const items = Array.isArray(draft.samsatKeliling) ? draft.samsatKeliling : [];
-    let skSeq = 0;
-
-    function skCardHtml(item = {}, idx = 0, isOpen = false) {
-      skSeq += 1;
-      const uid = `sk-${skSeq}`;
-      const isEnabled = item.enabled !== false;
-      const dayLabel = item.dayLabel || 'Jadwal Baru';
-      const timeRange = item.timeRange || '08.30 s.d. 12.00 WITA';
-      return `
-        <details class="admin-svc-details sk-item-card" data-sk-id="${esc(item.id || uid)}" ${isOpen ? 'open' : ''}>
-          <summary class="admin-svc-summary">
-            <button type="button" class="aui-drag-handle" aria-label="Seret untuk mengubah urutan jadwal ${esc(dayLabel)}" ${!canEditDraft() ? 'disabled' : ''}>${lucideIcon('grip-vertical', 16)}</button>
-            <span class="admin-svc-num num-tabular">${String(idx + 1).padStart(2, '0')}</span>
-            <span class="admin-svc-title-group">
-              <strong class="admin-svc-title-text">${esc(dayLabel)}</strong>
-              <span class="admin-svc-meta num-tabular">${esc(timeRange)} | ${esc(item.location || 'Lokasi belum diisi')}</span>
-            </span>
-            <span class="admin-svc-actions-bar">
-              <span class="admin-svc-status-badge ${isEnabled ? 'is-active' : 'is-inactive'}">${isEnabled ? 'Aktif' : 'Nonaktif'}</span>
-              <button type="button" class="btn btn-danger btn-sm sk-remove-btn" aria-label="Hapus jadwal ${esc(dayLabel)}" ${readOnlyAttr}>${lucideIcon('trash-2', 14)}</button>
-              <span class="admin-svc-chevron" aria-hidden="true">${lucideIcon('chevron-down', 18)}</span>
-            </span>
-          </summary>
-          <div class="admin-svc-body">
-            <div class="grid-2">
-              <div class="field-group">
-                <label for="sk-enabled-${uid}">Status Tampil</label>
-                <select id="sk-enabled-${uid}" class="sk-enabled-input" ${readOnlyAttr}>
-                  <option value="true" ${isEnabled ? 'selected' : ''}>Aktif (Tampil di Situs Publik)</option>
-                  <option value="false" ${!isEnabled ? 'selected' : ''}>Nonaktif (Sembunyikan)</option>
-                </select>
-              </div>
-              <div class="field-group">
-                <label for="sk-day-${uid}">Hari / Periode</label>
-                <input type="text" id="sk-day-${uid}" class="sk-day-input" value="${esc(item.dayLabel || '')}" placeholder="Contoh: Senin s.d. Kamis" ${readOnlyAttr} required>
-              </div>
-              <div class="field-group">
-                <label for="sk-time-${uid}">Jam Operasional (WITA)</label>
-                <input type="text" id="sk-time-${uid}" class="sk-time-input" value="${esc(item.timeRange || '')}" placeholder="Contoh: 08.30 s.d. 13.00 WITA" ${readOnlyAttr} required>
-              </div>
-              <div class="field-group">
-                <label for="sk-scope-${uid}">Jenis Layanan</label>
-                <input type="text" id="sk-scope-${uid}" class="sk-scope-input" value="${esc(item.serviceScope || '')}" placeholder="Contoh: Pengesahan Pajak Tahunan" ${readOnlyAttr}>
-              </div>
-            </div>
-            <div class="field-group">
-              <label for="sk-loc-${uid}">Lokasi / Titik Mangkal</label>
-              <input type="text" id="sk-loc-${uid}" class="sk-loc-input" value="${esc(item.location || '')}" placeholder="Contoh: Area Taman GOR / Jl. Moh. Hatta, Kota Palu" ${readOnlyAttr} required>
-            </div>
-            <div class="field-group" style="margin-bottom:0">
-              <label for="sk-note-${uid}">Catatan Tambahan (Opsional)</label>
-              <input type="text" id="sk-note-${uid}" class="sk-note-input" value="${esc(item.note || '')}" placeholder="Contoh: Siapkan STNK asli dan KTP pemilik kendaraan." ${readOnlyAttr}>
-            </div>
-          </div>
-        </details>
-      `;
-    }
-
-    moduleContent.innerHTML = `
-      <div class="module-header">
-        <div>
-          <h1>Jadwal Samsat Keliling (Rutin)</h1>
-          <p class="meta-text" style="margin:0.25rem 0 0">Atur jadwal rutin layanan mobil Samsat Keliling secara terpisah dari event/pengumuman.</p>
-        </div>
-        <button type="button" id="add-sk-btn" class="btn btn-accent" ${readOnlyAttr}>${lucideIcon('plus', 16)} Tambah Jadwal</button>
-      </div>
-      <form id="sk-form" class="panel-card">
-        <div id="sk-cards-list" class="repeater-list" style="margin-bottom:1.15rem">
-          ${items.length
-        ? items.map((item, idx) => skCardHtml(item, idx, false)).join('')
-        : '<div class="state-box"><p>Belum ada jadwal Samsat Keliling. Klik Tambah Jadwal untuk menambahkan.</p></div>'}
-        </div>
-        <button type="submit" class="btn btn-primary" ${readOnlyAttr}>${lucideIcon('save', 16)} Simpan Draf Jadwal Samsat Keliling</button>
-      </form>
-    `;
-
-    const listEl = document.getElementById('sk-cards-list');
-    function refreshSkBadges() {
-      const cards = Array.from(listEl.querySelectorAll('.sk-item-card'));
-      cards.forEach((card, i) => {
-        const num = card.querySelector('.admin-svc-num');
-        if (num) num.textContent = String(i + 1).padStart(2, '0');
-      });
-      if (!cards.length && !listEl.querySelector('.state-box')) {
-        listEl.innerHTML = '<div class="state-box"><p>Belum ada jadwal Samsat Keliling. Klik Tambah Jadwal untuk menambahkan.</p></div>';
-      }
-    }
-
-    bindSmoothAccordionDetails(moduleContent);
-    bindAnimateUiSortable(listEl, {
-      itemSelector: 'details.sk-item-card',
-      onReorder: refreshSkBadges
-    });
-
-    document.getElementById('add-sk-btn')?.addEventListener('click', () => {
-      const emptyBox = listEl.querySelector('.state-box');
-      if (emptyBox) emptyBox.remove();
-      const wrap = document.createElement('div');
-      wrap.innerHTML = skCardHtml({
-        id: `sk-${Date.now().toString(36)}`,
-        enabled: true,
-        dayLabel: '',
-        timeRange: '08.30 s.d. 13.00 WITA',
-        location: '',
-        serviceScope: 'Pengesahan Pajak Tahunan',
-        note: ''
-      }, listEl.querySelectorAll('.sk-item-card').length, true).trim();
-      const card = wrap.firstElementChild;
-      listEl.appendChild(card);
-      enhanceAdminControls(card);
-      bindSmoothAccordionDetails(listEl);
-      refreshSkBadges();
-      card.querySelector('.sk-day-input')?.focus();
-    });
-
-    listEl.addEventListener('click', (e) => {
-      const card = e.target.closest('.sk-item-card');
-      if (!card) return;
-      if (e.target.closest('.sk-remove-btn')) {
-        card.remove();
-        refreshSkBadges();
-      }
-    });
-
-    document.getElementById('sk-form')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const updated = Array.from(listEl.querySelectorAll('.sk-item-card')).map((card, i) => ({
-        id: card.getAttribute('data-sk-id') || `sk-${i + 1}`,
-        enabled: card.querySelector('.sk-enabled-input')?.value === 'true',
-        dayLabel: card.querySelector('.sk-day-input')?.value.trim() || '',
-        timeRange: card.querySelector('.sk-time-input')?.value.trim() || '',
-        location: card.querySelector('.sk-loc-input')?.value.trim() || '',
-        serviceScope: card.querySelector('.sk-scope-input')?.value.trim() || '',
-        note: card.querySelector('.sk-note-input')?.value.trim() || ''
-      }));
-      await saveDraftSection('samsatKeliling', updated);
-    });
   }
 
   enhanceAdminControls(document);
